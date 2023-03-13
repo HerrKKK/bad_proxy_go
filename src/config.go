@@ -8,13 +8,13 @@ import (
 
 type InboundConfig struct {
 	Host     string `json:"host"`
-	Port     int    `json:"port"`
+	Port     string `json:"port"`
 	Protocol string `json:"protocol"`
 }
 
 type OutboundConfig struct {
 	Host     string `json:"host"`
-	Port     int    `json:"port"`
+	Port     string `json:"port"`
 	Protocol string `json:"protocol"`
 }
 

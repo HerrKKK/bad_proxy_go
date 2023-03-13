@@ -5,7 +5,7 @@ import (
 	"go_proxy/protocols"
 )
 
-func HttpConnect(proxy *Proxy) error {
+func HttpAccept(proxy *Proxy) error {
 	_, err := proxy.Inbound.Read(proxy.buffer[:])
 	if err != nil {
 		return err
