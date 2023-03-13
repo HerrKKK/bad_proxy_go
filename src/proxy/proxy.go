@@ -18,7 +18,7 @@ type Proxy struct {
 }
 
 func (proxy Proxy) Proxy() {
-	proxy.buffer = make([]byte, 1024)
+	proxy.buffer = make([]byte, 8196)
 	err := proxy.Accept(&proxy) // client connection
 	if err != nil {
 		return

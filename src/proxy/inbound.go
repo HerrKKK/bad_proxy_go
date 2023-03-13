@@ -15,7 +15,8 @@ func HttpAccept(proxy *Proxy) error {
 		return err
 	}
 	if request.Method == "CONNECT" {
-		proxy.Inbound.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
+		var response = "HTTP/1.1 200 Connection Established\r\nConnection: close\r\n\r\n"
+		proxy.Inbound.Write([]byte(response))
 		proxy.buffer = nil
 		fmt.Println("https connect")
 	}
