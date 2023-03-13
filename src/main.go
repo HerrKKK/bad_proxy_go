@@ -14,8 +14,9 @@ func main() {
 	}
 	for {
 		instance := proxy.Proxy{
-			Accept: proxy.HttpConnect,
-			Dial:   proxy.FreeConnect,
+			Accept:  proxy.HttpConnect,
+			Dial:    proxy.FreeTCPDial,
+			Connect: proxy.HTTPConnect,
 		}
 		fmt.Println("listen on 10000")
 		conn, err := l.Accept()

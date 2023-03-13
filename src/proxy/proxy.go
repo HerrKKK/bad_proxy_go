@@ -11,17 +11,23 @@ type Proxy struct {
 	Outbound   net.Conn
 	Accept     func(proxy *Proxy) error
 	Dial       func(proxy *Proxy) error
+	Connect    func(proxy *Proxy) error
 	buffer     []byte
 	targetAddr string
+	Address    string
 }
 
 func (proxy Proxy) Proxy() {
 	proxy.buffer = make([]byte, 1024)
-	err := proxy.Accept(&proxy)
+	err := proxy.Accept(&proxy) // client connection
 	if err != nil {
 		return
 	}
-	err = proxy.Dial(&proxy)
+	err = proxy.Dial(&proxy) // 4L connection
+	if err != nil {
+		return
+	}
+	err = proxy.Connect(&proxy) // 7L connection
 	if err != nil {
 		return
 	}
