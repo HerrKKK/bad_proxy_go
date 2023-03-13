@@ -27,10 +27,6 @@ func (proxy Proxy) Proxy() {
 	if err != nil {
 		return
 	}
-	err = proxy.Connect(&proxy) // 7L connection
-	if err != nil {
-		return
-	}
 
 	fmt.Println("connect to " + proxy.targetAddr)
 
