@@ -8,6 +8,13 @@ import (
 )
 
 func main() {
+	config, err := ReadConfig("conf/server_config.json")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("config: " + config.Inbound.Protocol)
+
 	l, err := net.Listen("tcp", ":10000")
 	if err != nil {
 		log.Panic(err)
