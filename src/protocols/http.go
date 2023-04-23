@@ -17,6 +17,7 @@ type HTTPRequest struct {
 	Url     string
 	Address string
 	Payload []byte
+	Rawdata []byte
 }
 
 func (request HTTPRequest) Parse(buffer []byte) (HTTPRequest, error) {
@@ -40,5 +41,6 @@ func (request HTTPRequest) Parse(buffer []byte) (HTTPRequest, error) {
 	}
 
 	request.Payload = buffer[bytes.Index(buffer[:], []byte("\r\n\r\n")):]
+	request.Rawdata = buffer[:]
 	return request, nil
 }

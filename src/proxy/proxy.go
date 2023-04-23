@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"io"
 	"net"
 )
@@ -13,8 +12,8 @@ type Proxy struct {
 	Dial       func(proxy *Proxy) error
 	Connect    func(proxy *Proxy) error
 	buffer     []byte
-	targetAddr string
-	Address    string
+	targetAddr string // parsed from request format: google.com:443
+	Address    string // specified by config
 }
 
 func (proxy Proxy) Proxy() {
@@ -27,8 +26,6 @@ func (proxy Proxy) Proxy() {
 	if err != nil {
 		return
 	}
-
-	fmt.Println("connect to " + proxy.targetAddr)
 
 	go io.Copy(proxy.Outbound, proxy.Inbound)
 	io.Copy(proxy.Inbound, proxy.Outbound)

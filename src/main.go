@@ -28,8 +28,21 @@ func main() {
 	}
 	for {
 		instance := proxy.Proxy{
-			Accept: proxy.HttpAccept,
-			Dial:   proxy.FreeConnect,
+			Address: config.Outbound.Host + ":" + config.Outbound.Port,
+		}
+		if config.Inbound.Protocol == "http" {
+			//fmt.Println("inbound http")
+			instance.Accept = proxy.HttpAccept
+		} else if config.Inbound.Protocol == "btp" {
+			//fmt.Println("inbound btp")
+			instance.Accept = proxy.BtpAccept
+		}
+		if config.Outbound.Protocol == "btp" {
+			//fmt.Println("outbound btp")
+			instance.Dial = proxy.BtpDial
+		} else {
+			//fmt.Println("outbound free")
+			instance.Dial = proxy.FreeDial
 		}
 		fmt.Println("listen on " + config.Inbound.Host + ":" + config.Inbound.Port)
 		conn, err := l.Accept()
