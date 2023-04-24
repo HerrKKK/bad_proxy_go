@@ -1,34 +1,45 @@
 package proxy
 
 import (
+	"fmt"
 	"io"
-	"net"
 )
 
 type Proxy struct {
-	Inbound    net.Conn
-	Outbound   net.Conn
-	Accept     func(proxy *Proxy) error
-	Dial       func(proxy *Proxy) error
-	Connect    func(proxy *Proxy) error
-	buffer     []byte // volatile buffer, init every time
-	targetAddr string // parsed from request format: google.com:443
-	Address    string // specified by config
+	Inbound  Inbound
+	Outbound Outbound
+}
+
+type RoutingPackage struct {
+	Address string
+	Payload []byte
 }
 
 func (proxy Proxy) Proxy() {
-	err := proxy.Accept(&proxy) // client connection
+	for {
+		fmt.Println("loop")
+		in, _ := proxy.Inbound.Accept()
+		go proxy.process(in)
+	}
+}
+
+func (proxy Proxy) process(in InboundConnect) {
+	routingPackage, err := in.Connect() // handshake
 	if err != nil {
 		return
 	}
-	err = proxy.Dial(&proxy) // 4L connection
+	// routing to find outbound template
+	out, err := proxy.Outbound.Dial() // handshake
+	if err != nil || out == nil {
+		fmt.Println("outbound dial failure")
+		return
+	}
+	err = out.Connect(routingPackage)
 	if err != nil {
 		return
 	}
-
-	go io.Copy(proxy.Outbound, proxy.Inbound)
-	io.Copy(proxy.Inbound, proxy.Outbound)
-
-	proxy.Inbound.Close()
-	proxy.Outbound.Close()
+	go io.Copy(in, out)
+	io.Copy(out, in)
+	in.Close()
+	out.Close()
 }
