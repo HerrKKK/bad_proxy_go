@@ -11,13 +11,12 @@ type Proxy struct {
 	Accept     func(proxy *Proxy) error
 	Dial       func(proxy *Proxy) error
 	Connect    func(proxy *Proxy) error
-	buffer     []byte
+	buffer     []byte // volatile buffer, init every time
 	targetAddr string // parsed from request format: google.com:443
 	Address    string // specified by config
 }
 
 func (proxy Proxy) Proxy() {
-	proxy.buffer = make([]byte, 8196)
 	err := proxy.Accept(&proxy) // client connection
 	if err != nil {
 		return
