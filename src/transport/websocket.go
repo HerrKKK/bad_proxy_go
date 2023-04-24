@@ -1,63 +1,29 @@
 package transport
 
 import (
+	"go_proxy/structure"
+	"golang.org/x/net/websocket"
 	"net"
-	"time"
 )
 
-type TCPListener struct {
-	listener net.Listener
+type WsListener struct {
+	queue structure.ConnectQueue
+	addr  net.Addr
 }
 
-func (listener TCPListener) Accept() (net.Conn, error) {
-	return listener.listener.Accept()
+func (listener *WsListener) Accept() (net.Conn, error) {
+	return listener.queue.Pop(), nil // Pop wait for producer
 }
 
-func (listener TCPListener) Close() error {
-	return listener.listener.Close()
+func (listener *WsListener) Close() error {
+	return nil
 }
 
-func (listener TCPListener) Addr() net.Addr {
-	return listener.listener.Addr()
+func (listener *WsListener) Addr() net.Addr {
+	return listener.addr
 }
 
-func TCPListen(address string) (net.Listener, error) {
-	listener, err := net.Listen("tcp", address)
-	return TCPListener{listener: listener}, err
-}
-
-type TCPConnect struct {
-	conn net.Conn
-}
-
-func (tcp TCPConnect) Read(b []byte) (int, error) {
-	return tcp.conn.Read(b)
-}
-
-func (tcp TCPConnect) Write(b []byte) (int, error) {
-	return tcp.conn.Write(b)
-}
-
-func (tcp TCPConnect) Close() error {
-	return tcp.conn.Close()
-}
-
-func (tcp TCPConnect) LocalAddr() net.Addr {
-	return tcp.conn.LocalAddr()
-}
-
-func (tcp TCPConnect) RemoteAddr() net.Addr {
-	return tcp.conn.RemoteAddr()
-}
-
-func (tcp TCPConnect) SetDeadline(t time.Time) error {
-	return tcp.conn.SetDeadline(t)
-}
-
-func (tcp TCPConnect) SetReadDeadline(t time.Time) error {
-	return tcp.conn.SetReadDeadline(t)
-}
-
-func (tcp TCPConnect) SetWriteDeadline(t time.Time) error {
-	return tcp.conn.SetWriteDeadline(t)
+func (listener *WsListener) handle(conn *websocket.Conn) {
+	// hack websocket connection to our queue
+	go listener.queue.Push(conn)
 }

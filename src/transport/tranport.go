@@ -2,15 +2,22 @@ package transport
 
 import (
 	"crypto/tls"
+	"go_proxy/structure"
+	"golang.org/x/net/websocket"
 	"log"
 	"net"
+	"net/http"
 )
-
-var plain = false
 
 func Dial(address string, transmit string) (conn net.Conn, err error) {
 	if transmit == "tls" {
 		return tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
+	} else if transmit == "ws" {
+		return websocket.Dial(
+			"ws://"+address+"/bp",
+			"",
+			"http://localhost/",
+		)
 	}
 	return net.Dial("tcp", address)
 }
@@ -27,6 +34,11 @@ func Listen(address string, transmit string) (listener net.Listener, err error) 
 		}
 		config := &tls.Config{Certificates: []tls.Certificate{cert}}
 		return tls.Listen("tcp", address, config)
+	} else if transmit == "ws" {
+		listener := &WsListener{queue: *structure.NewQueue()}
+		http.Handle("/bp", websocket.Handler(listener.handle))
+		go http.ListenAndServe(address, nil)
+		return listener, nil
 	}
 	return net.Listen("tcp", address)
 }
