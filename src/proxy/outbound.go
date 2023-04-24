@@ -12,18 +12,22 @@ type Outbound struct {
 	Protocol string
 }
 
-func (outbound Outbound) Dial() (OutboundConnect, error) {
+func (outbound Outbound) Dial(address string, payload []byte) (out OutboundConnect, err error) {
+	err = nil
 	if outbound.Protocol == "btp" {
 		// *BtpOutbound implemented OutboundConnect,
 		// here we return the pointer of BtpOutbound, which is an OutboundConnect
 		// simply, *BtpOutbound is OutboundConnect
-		return &BtpOutbound{address: outbound.Address}, nil
+		out = &BtpOutbound{address: outbound.Address}
+	} else {
+		out = &FreeOutbound{address: outbound.Address}
 	}
-	return &FreeOutbound{address: outbound.Address}, nil
+	out.Connect(address, payload)
+	return
 }
 
 type OutboundConnect interface {
-	Connect(routingPackage RoutingPackage) error
+	Connect(address string, payload []byte) error
 	Read(b []byte) (int, error)
 	Write(b []byte) (int, error)
 	Close() error
@@ -34,23 +38,14 @@ type FreeOutbound struct {
 	address string
 }
 
-func (outbound *FreeOutbound) Connect(routingPackage RoutingPackage) (err error) {
+func (outbound *FreeOutbound) Connect(address string, payload []byte) (err error) {
 	// pointer receiver: just implement the method of *FreeOutbound
-	outbound.socket, err = transport.Dial(routingPackage.Address)
-	if err != nil {
+	outbound.socket, err = transport.Dial(address)
+	if err != nil || payload == nil {
 		fmt.Println("free failed to connect, addr is ", outbound.address)
 		return err
 	}
-
-	if routingPackage.Payload == nil {
-		fmt.Println("free dial buffer is nil")
-		return nil
-	}
-	fmt.Println("free connect to",
-		routingPackage.Address,
-		"length is",
-		len(routingPackage.Payload))
-	_, err = outbound.socket.Write(routingPackage.Payload)
+	_, err = outbound.socket.Write(payload)
 	return err
 }
 
@@ -74,22 +69,17 @@ type BtpOutbound struct {
 	address string
 }
 
-func (outbound *BtpOutbound) Connect(routingPackage RoutingPackage) error {
-	socket, err := transport.Dial(outbound.address)
-	if err != nil || socket == nil {
+func (outbound *BtpOutbound) Connect(address string, payload []byte) (err error) {
+	outbound.socket, err = transport.Dial(outbound.address)
+	if err != nil || payload == nil {
 		fmt.Println("btp failed to connect, addr is ", outbound.address)
-		return err
+		return
 	}
-	outbound.socket = socket
 
-	if routingPackage.Payload == nil {
-		fmt.Println("btp dial buffer is nil")
-		return nil
-	}
 	fmt.Println("btp connect to", outbound.address)
-	payload := append(
-		[]byte{uint8(len(routingPackage.Address))}, // must less than 255 for uint8
-		append([]byte(routingPackage.Address), routingPackage.Payload[:]...)...,
+	payload = append(
+		[]byte{uint8(len(address))}, // must less than 255 for uint8
+		append([]byte(address), payload[:]...)...,
 	)
 	_, err = outbound.socket.Write(payload)
 	return err

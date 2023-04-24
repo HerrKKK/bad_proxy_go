@@ -22,7 +22,7 @@ func (inbound Inbound) Accept() (InboundConnect, error) {
 }
 
 type InboundConnect interface {
-	Connect() (RoutingPackage, error)
+	Connect() (string, []byte, error)
 	Read(b []byte) (int, error)
 	Write(b []byte) (int, error)
 	Close() error
@@ -32,31 +32,30 @@ type HttpInbound struct {
 	socket net.Conn
 }
 
-func (inbound HttpInbound) Connect() (RoutingPackage, error) {
+func (inbound HttpInbound) Connect() (string, []byte, error) {
 	buffer := make([]byte, 8196)
-	_, err := inbound.socket.Read(buffer[:])
-	if err != nil {
-		return RoutingPackage{}, err
-	}
-	if buffer == nil {
-		fmt.Println("buffer null after first http parse")
-		return RoutingPackage{}, nil
+	length, err := inbound.socket.Read(buffer[:])
+	if err != nil || buffer == nil {
+		return "", nil, err
 	}
 	request, err := protocols.HTTPRequest{}.Parse(buffer[:])
 	if err != nil {
-		return RoutingPackage{}, err
+		return "", nil, err
 	}
 	targetAddr := request.Address
 	if request.Method == "CONNECT" {
 		var response = "HTTP/1.1 200 Connection Established\r\nConnection: close\r\n\r\n"
-		inbound.socket.Write([]byte(response))
+		_, err = inbound.socket.Write([]byte(response))
+		if err != nil {
+			return "", nil, err
+		}
 		fmt.Println("https connect")
 		buffer = make([]byte, 8196) // clear
-		length, _ := inbound.socket.Read(buffer)
+		length, _ = inbound.socket.Read(buffer)
 		fmt.Println("http", request.Address, "recv length is", length)
-		buffer = buffer[:length]
 	}
-	return RoutingPackage{Address: targetAddr, Payload: buffer}, nil
+	buffer = buffer[:length]
+	return targetAddr, buffer, nil
 }
 
 func (inbound HttpInbound) Read(b []byte) (int, error) {
@@ -75,17 +74,17 @@ type BtpInbound struct {
 	socket net.Conn
 }
 
-func (inbound BtpInbound) Connect() (RoutingPackage, error) {
+func (inbound BtpInbound) Connect() (string, []byte, error) {
 	buffer := make([]byte, 8196)
 	length, err := inbound.socket.Read(buffer)
 	if err != nil {
-		return RoutingPackage{}, err
+		return "", nil, err
 	}
 	request, err := protocols.BTPRequest{}.Parse(buffer[:length])
 	if err != nil {
-		return RoutingPackage{}, err
+		return "", nil, err
 	}
-	return RoutingPackage{Address: request.Address, Payload: request.Payload}, nil
+	return request.Address, request.Payload, nil
 }
 
 func (inbound BtpInbound) Read(b []byte) (int, error) {
