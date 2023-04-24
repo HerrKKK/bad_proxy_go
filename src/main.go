@@ -21,7 +21,10 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	listener, _ := transport.Listen(config.Inbound.Host + ":" + config.Inbound.Port)
+	listener, _ := transport.Listen(
+		config.Inbound.Host+":"+config.Inbound.Port,
+		config.Inbound.Protocol,
+	)
 	proxy := proxy.Proxy{
 		Inbound: proxy.Inbound{
 			Listener: listener,

@@ -40,7 +40,7 @@ type FreeOutbound struct {
 
 func (outbound *FreeOutbound) Connect(address string, payload []byte) (err error) {
 	// pointer receiver: just implement the method of *FreeOutbound
-	outbound.socket, err = transport.Dial(address)
+	outbound.socket, err = transport.Dial(address, "freedom")
 	if err != nil || payload == nil {
 		fmt.Println("free failed to connect, addr is ", outbound.address)
 		return err
@@ -70,7 +70,7 @@ type BtpOutbound struct {
 }
 
 func (outbound *BtpOutbound) Connect(address string, payload []byte) (err error) {
-	outbound.socket, err = transport.Dial(outbound.address)
+	outbound.socket, err = transport.Dial(outbound.address, "btp")
 	if err != nil || payload == nil {
 		fmt.Println("btp failed to connect, addr is ", outbound.address)
 		return
