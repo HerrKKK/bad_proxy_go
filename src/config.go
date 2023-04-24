@@ -10,12 +10,14 @@ type InboundConfig struct {
 	Host     string `json:"host"`
 	Port     string `json:"port"`
 	Protocol string `json:"protocol"`
+	Transmit string `json:"transmit"`
 }
 
 type OutboundConfig struct {
 	Host     string `json:"host"`
 	Port     string `json:"port"`
 	Protocol string `json:"protocol"`
+	Transmit string `json:"transmit"`
 }
 
 type Config struct {

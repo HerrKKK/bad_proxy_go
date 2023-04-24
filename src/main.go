@@ -23,7 +23,7 @@ func main() {
 	}
 	listener, _ := transport.Listen(
 		config.Inbound.Host+":"+config.Inbound.Port,
-		config.Inbound.Protocol,
+		config.Inbound.Transmit,
 	)
 	proxy := proxy.Proxy{
 		Inbound: proxy.Inbound{
@@ -33,6 +33,7 @@ func main() {
 		Outbound: proxy.Outbound{
 			Address:  config.Outbound.Host + ":" + config.Outbound.Port,
 			Protocol: config.Outbound.Protocol,
+			Transmit: config.Outbound.Transmit,
 		},
 	}
 	proxy.Proxy()

@@ -9,14 +9,15 @@ import (
 type Inbound struct {
 	Listener net.Listener
 	Protocol string
+	Transmit string
 }
 
 func (inbound Inbound) Accept() (InboundConnect, error) {
 	conn, _ := inbound.Listener.Accept()
 	if inbound.Protocol == "http" {
-		return HttpInbound{socket: conn}, nil
+		return HttpInbound{conn: conn}, nil
 	} else if inbound.Protocol == "btp" {
-		return BtpInbound{socket: conn}, nil
+		return BtpInbound{conn: conn}, nil
 	}
 	return nil, nil
 }
@@ -29,12 +30,12 @@ type InboundConnect interface {
 }
 
 type HttpInbound struct {
-	socket net.Conn
+	conn net.Conn
 }
 
 func (inbound HttpInbound) Connect() (string, []byte, error) {
 	buffer := make([]byte, 8196)
-	length, err := inbound.socket.Read(buffer[:])
+	length, err := inbound.conn.Read(buffer[:])
 	if err != nil || buffer == nil {
 		return "", nil, err
 	}
@@ -45,13 +46,13 @@ func (inbound HttpInbound) Connect() (string, []byte, error) {
 	targetAddr := request.Address
 	if request.Method == "CONNECT" {
 		var response = "HTTP/1.1 200 Connection Established\r\nConnection: close\r\n\r\n"
-		_, err = inbound.socket.Write([]byte(response))
+		_, err = inbound.conn.Write([]byte(response))
 		if err != nil {
 			return "", nil, err
 		}
 		fmt.Println("https connect")
 		buffer = make([]byte, 8196) // clear
-		length, _ = inbound.socket.Read(buffer)
+		length, _ = inbound.conn.Read(buffer)
 		fmt.Println("http", request.Address, "recv length is", length)
 	}
 	buffer = buffer[:length]
@@ -59,24 +60,24 @@ func (inbound HttpInbound) Connect() (string, []byte, error) {
 }
 
 func (inbound HttpInbound) Read(b []byte) (int, error) {
-	return inbound.socket.Read(b)
+	return inbound.conn.Read(b)
 }
 
 func (inbound HttpInbound) Write(b []byte) (int, error) {
-	return inbound.socket.Write(b)
+	return inbound.conn.Write(b)
 }
 
 func (inbound HttpInbound) Close() error {
-	return inbound.socket.Close()
+	return inbound.conn.Close()
 }
 
 type BtpInbound struct {
-	socket net.Conn
+	conn net.Conn
 }
 
 func (inbound BtpInbound) Connect() (string, []byte, error) {
 	buffer := make([]byte, 8196)
-	length, err := inbound.socket.Read(buffer)
+	length, err := inbound.conn.Read(buffer)
 	if err != nil {
 		return "", nil, err
 	}
@@ -88,13 +89,13 @@ func (inbound BtpInbound) Connect() (string, []byte, error) {
 }
 
 func (inbound BtpInbound) Read(b []byte) (int, error) {
-	return inbound.socket.Read(b)
+	return inbound.conn.Read(b)
 }
 
 func (inbound BtpInbound) Write(b []byte) (int, error) {
-	return inbound.socket.Write(b)
+	return inbound.conn.Write(b)
 }
 
 func (inbound BtpInbound) Close() error {
-	return inbound.socket.Close()
+	return inbound.conn.Close()
 }

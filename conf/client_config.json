@@ -7,6 +7,7 @@
   "outbound": {
     "host": "localhost",
     "port": "9999",
-    "protocol": "btp"
+    "protocol": "btp",
+    "transmit": "tls"
   }
 }
