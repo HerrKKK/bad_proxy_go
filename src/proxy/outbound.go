@@ -2,12 +2,12 @@ package proxy
 
 import (
 	"fmt"
-	"net"
+	"go_proxy/transport"
 )
 
 func FreeDial(proxy *Proxy) error {
 	fmt.Println("outbound free connect to", proxy.targetAddr)
-	outbound, err := net.Dial("tcp", proxy.targetAddr)
+	outbound, err := transport.Dial(proxy.targetAddr)
 	if err != nil {
 		fmt.Println("free outbound connect failure, target is ", proxy.targetAddr)
 		return err
@@ -24,7 +24,7 @@ func FreeDial(proxy *Proxy) error {
 
 func BtpDial(proxy *Proxy) error {
 	//fmt.Println("outbound btp connect to", proxy.Address)
-	outbound, err := net.Dial("tcp", proxy.Address)
+	outbound, err := transport.Dial(proxy.Address)
 	if err != nil {
 		fmt.Println("btp outbound connect failure, target is ", proxy.Address)
 		return err

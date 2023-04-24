@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"go_proxy/proxy"
+	"go_proxy/transport"
 	"log"
-	"net"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	l, err := net.Listen("tcp", config.Inbound.Host+":"+config.Inbound.Port)
+	l, err := transport.Listen(config.Inbound.Host + ":" + config.Inbound.Port)
 	if err != nil {
 		log.Panic(err)
 	}
