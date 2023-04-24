@@ -3,6 +3,7 @@ package proxy
 import (
 	"fmt"
 	"io"
+	"time"
 )
 
 type Proxy struct {
@@ -17,13 +18,15 @@ type RoutingPackage struct {
 
 func (proxy Proxy) Proxy() {
 	for {
-		fmt.Println("loop")
 		in, _ := proxy.Inbound.Accept()
 		go proxy.process(in)
 	}
 }
 
 func (proxy Proxy) process(in InboundConnect) {
+	defer in.Close()
+	fmt.Println("process start")
+	t := time.Now()
 	routingPackage, err := in.Connect() // handshake
 	if err != nil {
 		return
@@ -34,12 +37,14 @@ func (proxy Proxy) process(in InboundConnect) {
 		fmt.Println("outbound dial failure")
 		return
 	}
+	defer out.Close()
 	err = out.Connect(routingPackage)
 	if err != nil {
 		return
 	}
 	go io.Copy(in, out)
 	io.Copy(out, in)
-	in.Close()
-	out.Close()
+
+	fmt.Print("process end ")
+	fmt.Println(time.Since(t) / time.Millisecond)
 }

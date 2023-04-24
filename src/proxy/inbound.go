@@ -53,8 +53,7 @@ func (inbound HttpInbound) Connect() (RoutingPackage, error) {
 		fmt.Println("https connect")
 		buffer = make([]byte, 8196) // clear
 		length, _ := inbound.socket.Read(buffer)
-		//fmt.Println("http target is", request.Address)
-		//fmt.Println("http recv length is", length)
+		fmt.Println("http", request.Address, "recv length is", length)
 		buffer = buffer[:length]
 	}
 	return RoutingPackage{Address: targetAddr, Payload: buffer}, nil

@@ -5,6 +5,8 @@
     "protocol": "http"
   },
   "outbound": {
-    "protocol": "freedom"
+    "host": "localhost",
+    "port": "9999",
+    "protocol": "btp"
   }
 }

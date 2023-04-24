@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"fmt"
 	"go_proxy/transport"
 	"net"
@@ -12,12 +13,13 @@ type Outbound struct {
 }
 
 func (outbound Outbound) Dial() (OutboundConnect, error) {
-	if outbound.Protocol == "freedom" {
-		return FreeOutbound{address: outbound.Address}, nil
-	} else if outbound.Protocol == "btp" {
-		return BtpOutbound{address: outbound.Address}, nil
+	if outbound.Protocol == "btp" {
+		// *BtpOutbound implemented OutboundConnect,
+		// here we return the pointer of BtpOutbound, which is an OutboundConnect
+		// simply, *BtpOutbound is OutboundConnect
+		return &BtpOutbound{address: outbound.Address}, nil
 	}
-	return nil, nil
+	return &FreeOutbound{address: outbound.Address}, nil
 }
 
 type OutboundConnect interface {
@@ -32,39 +34,35 @@ type FreeOutbound struct {
 	address string
 }
 
-func (outbound FreeOutbound) Connect(routingPackage RoutingPackage) error {
-	socket, err := transport.Dial(routingPackage.Address)
-	if err != nil || socket == nil {
+func (outbound *FreeOutbound) Connect(routingPackage RoutingPackage) (err error) {
+	// pointer receiver: just implement the method of *FreeOutbound
+	outbound.socket, err = transport.Dial(routingPackage.Address)
+	if err != nil {
 		fmt.Println("free failed to connect, addr is ", outbound.address)
 		return err
 	}
-	outbound.socket = socket
-	fmt.Println("free connect to", routingPackage.Address)
 
 	if routingPackage.Payload == nil {
 		fmt.Println("free dial buffer is nil")
 		return nil
 	}
-	//fmt.Println("http recv length is", len(routingPackage.Payload))
+	fmt.Println("free connect to",
+		routingPackage.Address,
+		"length is",
+		len(routingPackage.Payload))
 	_, err = outbound.socket.Write(routingPackage.Payload)
 	return err
 }
 
-func (outbound FreeOutbound) Read(b []byte) (int, error) {
-	if outbound.socket == nil {
-		return 0, nil
-	}
+func (outbound *FreeOutbound) Read(b []byte) (int, error) {
 	return outbound.socket.Read(b)
 }
 
-func (outbound FreeOutbound) Write(b []byte) (int, error) {
-	if outbound.socket == nil {
-		return 0, nil
-	}
+func (outbound *FreeOutbound) Write(b []byte) (int, error) {
 	return outbound.socket.Write(b)
 }
 
-func (outbound FreeOutbound) Close() error {
+func (outbound *FreeOutbound) Close() error {
 	if outbound.socket == nil {
 		return nil
 	}
@@ -76,7 +74,7 @@ type BtpOutbound struct {
 	address string
 }
 
-func (outbound BtpOutbound) Connect(routingPackage RoutingPackage) error {
+func (outbound *BtpOutbound) Connect(routingPackage RoutingPackage) error {
 	socket, err := transport.Dial(outbound.address)
 	if err != nil || socket == nil {
 		fmt.Println("btp failed to connect, addr is ", outbound.address)
@@ -97,21 +95,21 @@ func (outbound BtpOutbound) Connect(routingPackage RoutingPackage) error {
 	return err
 }
 
-func (outbound BtpOutbound) Read(b []byte) (int, error) {
+func (outbound *BtpOutbound) Read(b []byte) (int, error) {
 	if outbound.socket == nil {
-		return 0, nil
+		return 0, errors.New("nil socket")
 	}
 	return outbound.socket.Read(b)
 }
 
-func (outbound BtpOutbound) Write(b []byte) (int, error) {
+func (outbound *BtpOutbound) Write(b []byte) (int, error) {
 	if outbound.socket == nil {
-		return 0, nil
+		return 0, errors.New("nil socket")
 	}
 	return outbound.socket.Write(b)
 }
 
-func (outbound BtpOutbound) Close() error {
+func (outbound *BtpOutbound) Close() error {
 	if outbound.socket == nil {
 		return nil
 	}
