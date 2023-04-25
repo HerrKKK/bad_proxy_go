@@ -6,24 +6,54 @@ import (
 )
 
 type Proxy struct {
-	Inbound  []Inbound
-	Outbound []Outbound
+	Inbounds  []Inbound
+	Outbounds []Outbound
+}
+
+type Config struct {
+	Inbounds  []InboundConfig  `json:"inbound"`
+	Outbounds []OutboundConfig `json:"outbound"`
+}
+
+func NewProxy(config Config) (newProxy Proxy) {
+	for _, in := range config.Inbounds {
+		newInbound := Inbound{
+			Address:     in.Host + ":" + in.Port,
+			Protocol:    in.Protocol,
+			Transmit:    in.Transmit,
+			WsPath:      in.WsPath,
+			TlsCertPath: in.TlsCertPath,
+			TlsKeyPath:  in.TlsKeyPath,
+		}
+		newProxy.Inbounds = append(newProxy.Inbounds, newInbound)
+	}
+
+	for _, out := range config.Outbounds {
+		newOutbound := Outbound{
+			Address:  out.Host + ":" + out.Port,
+			Protocol: out.Protocol,
+			Transmit: out.Transmit,
+			WsPath:   out.WsPath,
+		}
+		newProxy.Outbounds = append(newProxy.Outbounds, newOutbound)
+	}
+	return
 }
 
 func (proxy Proxy) Start() {
-	for index, _ := range proxy.Inbound {
+	for index, _ := range proxy.Inbounds {
 		go func(index int) {
-			log.Println("listen on", proxy.Inbound[index].Address)
-			_ = proxy.Inbound[index].Listen()
+			log.Println("listen on", proxy.Inbounds[index].Address)
+			_ = proxy.Inbounds[index].Listen()
 			for {
-				in, _ := proxy.Inbound[index].Accept()
-				go proxy.process(in)
+				in, _ := proxy.Inbounds[index].Accept()
+				go proxy.proxy(in)
 			}
 		}(index)
 	}
 }
 
-func (proxy Proxy) process(in InboundConnect) {
+func (proxy Proxy) proxy(in InboundConnect) {
 	address, payload, err := in.Connect() // handshake
 	if err != nil {
 		return
@@ -43,5 +73,5 @@ func (proxy Proxy) process(in InboundConnect) {
 
 func (proxy Proxy) route(address string) (outbound Outbound) {
 	_ = address
-	return proxy.Outbound[0]
+	return proxy.Outbounds[0]
 }

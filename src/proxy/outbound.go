@@ -7,6 +7,14 @@ import (
 	"net"
 )
 
+type OutboundConfig struct {
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	Protocol string `json:"protocol"`
+	Transmit string `json:"transmit"`
+	WsPath   string `json:"ws_path"`
+}
+
 type Outbound struct {
 	Address  string
 	Protocol string
