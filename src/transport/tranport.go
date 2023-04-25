@@ -20,7 +20,7 @@ func (protocol ProtocolType) Str() string {
 	return string(protocol)
 }
 
-func TransportProtocol(protocol string) ProtocolType {
+func GetProtocol(protocol string) ProtocolType {
 	return ProtocolType(protocol)
 }
 
