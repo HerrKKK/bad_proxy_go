@@ -11,9 +11,9 @@ import (
 func Dial(address string, transmit string, wsPath string) (conn net.Conn, err error) {
 	if transmit == "tls" {
 		return tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
-	} else if transmit == "ws" {
+	} else if transmit == "ws" || transmit == "wss" {
 		return websocket.Dial(
-			"ws://"+address+wsPath,
+			transmit+"://"+address+wsPath,
 			"",
 			"http://localhost/",
 		)

@@ -3,7 +3,6 @@ package proxy
 import (
 	"go_proxy/protocols"
 	"go_proxy/transport"
-	"log"
 	"net"
 )
 
@@ -80,12 +79,6 @@ func (inbound HttpInbound) Connect() (string, []byte, error) {
 		length, _ = inbound.conn.Read(buffer)
 	}
 	buffer = buffer[:length]
-	log.Println(
-		"http connect from",
-		request.Address,
-		"to",
-		inbound.conn.RemoteAddr(),
-	)
 	return targetAddr, buffer, nil
 }
 
@@ -115,12 +108,6 @@ func (inbound BtpInbound) Connect() (string, []byte, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	log.Println(
-		"btp connect from",
-		request.Address,
-		"to",
-		inbound.conn.RemoteAddr(),
-	)
 	return request.Address, request.Payload, nil
 }
 

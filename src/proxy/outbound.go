@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"errors"
 	"go_proxy/transport"
 	"log"
 	"net"
@@ -102,16 +101,10 @@ func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err err
 }
 
 func (outbound *BtpOutbound) Read(b []byte) (int, error) {
-	if outbound.conn == nil {
-		return 0, errors.New("nil conn")
-	}
 	return outbound.conn.Read(b)
 }
 
 func (outbound *BtpOutbound) Write(b []byte) (int, error) {
-	if outbound.conn == nil {
-		return 0, errors.New("nil conn")
-	}
 	return outbound.conn.Write(b)
 }
 
