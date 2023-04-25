@@ -1,5 +1,5 @@
 {
-  "inbound": [{
+  "inbounds": [{
     "secret": "c2fb629e-c8a2-4323-80dc-36fc793f57f5",
     "host": "0.0.0.0",
     "port": "9999",
@@ -7,7 +7,7 @@
     "transmit": "ws",
     "ws_path": "/bp"
   }],
-  "outbound": [{
+  "outbounds": [{
     "protocol": "freedom"
   }],
   "fallback": {

@@ -4,23 +4,27 @@ import (
 	"go_proxy/transport"
 	"io"
 	"log"
+	"strings"
 )
 
 type Proxy struct {
 	Inbounds  []Inbound
 	Outbounds map[string]*Outbound
 	Fallback  FallbackConfig
+	router    Router
 }
 
 type Config struct {
-	Inbounds  []InboundConfig  `json:"inbound"`
-	Outbounds []OutboundConfig `json:"outbound"`
+	Inbounds  []InboundConfig  `json:"inbounds"`
+	Outbounds []OutboundConfig `json:"outbounds"`
+	Router    []RuleConfig     `json:"routers"`
 	Fallback  FallbackConfig   `json:"fallback"`
 }
 
 func NewProxy(config Config) (newProxy Proxy) {
 	newProxy.Fallback = config.Fallback
 	newProxy.Outbounds = make(map[string]*Outbound, 10)
+	newProxy.router = NewRouter(config.Router)
 	for _, in := range config.Inbounds {
 		newInbound := Inbound{
 			Secret:      in.Secret,
@@ -94,12 +98,12 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	}
 	go io.Copy(in, out)
 	_, _ = io.Copy(out, in)
-	if err != nil {
-		log.Println("in -> out except")
-	}
 }
 
 func (proxy Proxy) route(address string) (outbound Outbound) {
-	_ = address
-	return *proxy.Outbounds[""]
+	// If s does not contain sep and sep is not empty,
+	// Split returns a slice of length 1 whose only element is s
+	host := strings.Split(address, ":")[0]
+	tag := proxy.router.route(host)
+	return *proxy.Outbounds[tag]
 }
