@@ -44,7 +44,8 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 	return nil
 }
 
-func (request *BTPRequest) Parse(buffer []byte) (req BTPRequest, err error) {
+func ParseBtpRequest(buffer []byte) (request *BTPRequest, err error) {
+	request = &BTPRequest{}
 	request.digest = buffer[:32]
 	request.confusionLen = int(buffer[32]) // uint8
 
@@ -64,7 +65,7 @@ func (request *BTPRequest) Parse(buffer []byte) (req BTPRequest, err error) {
 	request.Address = host + ":" + port
 	request.Payload = buffer[pos:]
 	request.rawdata = buffer
-	return *request, nil
+	return request, nil
 }
 
 func EncodeBtpRequest(address string, payload []byte, secret string) (res []byte, err error) {
