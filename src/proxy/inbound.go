@@ -40,14 +40,17 @@ func (inbound *Inbound) Listen() (err error) {
 	return
 }
 
-func (inbound *Inbound) Accept() (InboundConnect, error) {
-	conn, _ := inbound.Listener.Accept()
-	if inbound.Protocol == "http" {
-		return HttpInbound{conn: conn}, nil
-	} else if inbound.Protocol == "btp" {
-		return BtpInbound{conn: conn, secret: inbound.Secret}, nil
+func (inbound *Inbound) Accept() (inConn InboundConnect, err error) {
+	conn, err := inbound.Listener.Accept()
+	if err != nil {
+		return
 	}
-	return nil, nil
+	if inbound.Protocol == "http" {
+		inConn = HttpInbound{conn: conn}
+	} else if inbound.Protocol == "btp" {
+		inConn = BtpInbound{conn: conn, secret: inbound.Secret}
+	}
+	return
 }
 
 type InboundConnect interface {
@@ -61,28 +64,31 @@ type HttpInbound struct {
 	conn net.Conn
 }
 
-func (inbound HttpInbound) Connect() (string, []byte, error) {
-	buffer := make([]byte, 8196)
-	length, err := inbound.conn.Read(buffer[:])
-	if err != nil || buffer == nil {
-		return "", nil, err
-	}
-	request, err := protocols.HTTPRequest{}.Parse(buffer[:])
+func (inbound HttpInbound) Connect() (targetAddr string, payload []byte, err error) {
+	payload = make([]byte, 8196)
+	length, err := inbound.conn.Read(payload[:])
 	if err != nil {
-		return "", nil, err
+		return
 	}
-	targetAddr := request.Address
+	request, err := protocols.HTTPRequest{}.Parse(payload[:])
+	if err != nil {
+		return
+	}
+	targetAddr = request.Address
 	if request.Method == "CONNECT" {
 		var response = "HTTP/1.1 200 Connection Established\r\nConnection: close\r\n\r\n"
 		_, err = inbound.conn.Write([]byte(response))
 		if err != nil {
-			return "", nil, err
+			return
 		}
-		buffer = make([]byte, 8196) // clear
-		length, _ = inbound.conn.Read(buffer)
+		payload = make([]byte, 8196) // clear
+		length, err = inbound.conn.Read(payload)
+		if err != nil {
+			return
+		}
 	}
-	buffer = buffer[:length]
-	return targetAddr, buffer, nil
+	payload = payload[:length]
+	return
 }
 
 func (inbound HttpInbound) Read(b []byte) (int, error) {
@@ -102,21 +108,19 @@ type BtpInbound struct {
 	secret string
 }
 
-func (inbound BtpInbound) Connect() (string, []byte, error) {
-	buffer := make([]byte, 8196)
-	length, err := inbound.conn.Read(buffer)
+func (inbound BtpInbound) Connect() (targetAddr string, payload []byte, err error) {
+	payload = make([]byte, 8196)
+	length, err := inbound.conn.Read(payload)
 	if err != nil {
-		return "", nil, err
+		return
 	}
-	request, err := protocols.ParseBtpRequest(buffer[:length])
+	request, err := protocols.ParseBtpRequest(payload[:length])
 	if err != nil {
-		log.Println(err)
-		return "", nil, err
+		return
 	}
 	err = request.Validate(inbound.secret)
 	if err != nil {
-		log.Println(err)
-		return "", nil, err
+		return
 	}
 	log.Println("btp received from", request.Address)
 	return request.Address, request.Payload, nil
