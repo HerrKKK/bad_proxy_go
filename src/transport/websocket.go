@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"go_proxy/structure"
 	"golang.org/x/net/websocket"
 	"net"
 	"sync"
@@ -9,9 +8,8 @@ import (
 )
 
 type WsListener struct {
-	queue structure.ConnectQueue
-	addr  net.Addr
-	ch    chan net.Conn
+	addr net.Addr
+	ch   chan net.Conn
 }
 
 func (listener *WsListener) Accept() (conn net.Conn, err error) {
@@ -44,11 +42,11 @@ type WsConnect struct {
 }
 
 func (ws WsConnect) Read(b []byte) (n int, err error) {
-	return (*ws.conn).Read(b)
+	return ws.conn.Read(b)
 }
 
 func (ws WsConnect) Write(b []byte) (n int, err error) {
-	return (*ws.conn).Write(b)
+	return ws.conn.Write(b)
 }
 
 func (ws WsConnect) Close() (err error) {

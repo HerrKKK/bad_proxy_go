@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"go_proxy/protocols"
 	"log"
 	"net"
@@ -18,7 +17,6 @@ func (inbound Inbound) Accept() (InboundConnect, error) {
 	if inbound.Protocol == "http" {
 		return HttpInbound{conn: conn}, nil
 	} else if inbound.Protocol == "btp" {
-		log.Println("btp inbound accepted")
 		return BtpInbound{conn: conn}, nil
 	}
 	return nil, nil
@@ -52,13 +50,11 @@ func (inbound HttpInbound) Connect() (string, []byte, error) {
 		if err != nil {
 			return "", nil, err
 		}
-		fmt.Println("https connect")
+		log.Println("https connect")
 		buffer = make([]byte, 8196) // clear
 		length, _ = inbound.conn.Read(buffer)
-		fmt.Println("http", request.Address, "recv length is", length)
 	}
 	buffer = buffer[:length]
-	log.Println("http first payload len is", length)
 	return targetAddr, buffer, nil
 }
 
@@ -81,18 +77,13 @@ type BtpInbound struct {
 func (inbound BtpInbound) Connect() (string, []byte, error) {
 	buffer := make([]byte, 8196)
 	length, err := inbound.conn.Read(buffer)
-	log.Println("btp ws recv len is", length)
 	if err != nil {
 		return "", nil, err
-	}
-	if length == 0 {
-		log.Println("btp recv 0")
 	}
 	request, err := protocols.BTPRequest{}.Parse(buffer[:length])
 	if err != nil {
 		return "", nil, err
 	}
-	log.Println("btp first payload len is", len(request.Payload))
 	return request.Address, request.Payload, nil
 }
 
