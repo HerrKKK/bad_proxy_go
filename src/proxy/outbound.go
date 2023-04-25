@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"go_proxy/protocols"
 	"go_proxy/transport"
 	"log"
 	"net"
@@ -92,10 +93,7 @@ type BtpOutbound struct {
 }
 
 func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	payload = append(
-		[]byte{uint8(len(targetAddr))}, // must less than 255 for uint8
-		append([]byte(targetAddr), payload[:]...)...,
-	)
+	payload, _ = protocols.EncodeBtpRequest(targetAddr, payload)
 	_, err = outbound.conn.Write(payload)
 	return err
 }
