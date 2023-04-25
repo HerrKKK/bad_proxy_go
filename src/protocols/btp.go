@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"math/big"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 type BTPRequest struct {
 	Address      string
 	Payload      []byte
-	digest       []byte
+	digest       string
 	confusionLen int
 	timediff     int
 	headerLen    int
@@ -33,8 +34,14 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write(request.rawdata[32:])
-	if string(h.Sum(nil)) != string(request.digest) {
+	if hex.EncodeToString(h.Sum(nil)) != request.digest {
 		return errors.New("digest mismatch, unauthorized connect")
+	}
+
+	lru = GetBtpCache()
+	err = lru.Add(request.digest)
+	if err != nil {
+		return err
 	}
 
 	if request.headerLen != 41 {
@@ -46,7 +53,7 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 
 func ParseBtpRequest(buffer []byte) (request *BTPRequest, err error) {
 	request = &BTPRequest{}
-	request.digest = buffer[:32]
+	request.digest = hex.EncodeToString(buffer[:32])
 	request.confusionLen = int(buffer[32]) // uint8
 
 	pos := 32 + 1 + int(request.confusionLen)
@@ -100,11 +107,4 @@ func EncodeBtpRequest(address string, payload []byte, secret string) (res []byte
 	digest := h.Sum(nil)
 
 	return append(digest, body...), nil
-}
-
-func BytesToInt(b []byte) int {
-	bytesBuffer := bytes.NewBuffer(b)
-	var x int32
-	binary.Read(bytesBuffer, binary.BigEndian, &x)
-	return int(x)
 }
