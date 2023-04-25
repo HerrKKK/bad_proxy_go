@@ -2,7 +2,6 @@ package protocols
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -20,17 +19,20 @@ type HTTPRequest struct {
 	Rawdata []byte
 }
 
-func (request HTTPRequest) Parse(buffer []byte) (HTTPRequest, error) {
-	_, err := fmt.Sscanf(
+func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
+	_, err = fmt.Sscanf(
 		string(buffer[:bytes.IndexByte(buffer[:], '\n')]),
 		"%s%s",
 		&request.Method,
 		&request.Url,
 	)
 	if err != nil {
-		return HTTPRequest{}, errors.New("scan error")
+		return
 	}
-	hostPortURL, _ := url.Parse(request.Url)
+	hostPortURL, err := url.Parse(request.Url)
+	if err != nil {
+		return
+	}
 	if len(hostPortURL.Host) == 0 {
 		request.Address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
 	} else {

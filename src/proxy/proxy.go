@@ -43,15 +43,29 @@ func NewProxy(config Config) (newProxy Proxy) {
 }
 
 func (proxy Proxy) Start() {
-	for index, _ := range proxy.Inbounds {
-		go func(index int) {
-			log.Println("listen on", proxy.Inbounds[index].Address)
-			_ = proxy.Inbounds[index].Listen()
+	for _, inbound := range proxy.Inbounds {
+		go func(inbound Inbound) {
+			log.Println("listen on", inbound.Address)
+			err := inbound.Listen()
+			if err != nil {
+				log.Fatalf(
+					"inbound on %s dead!\n",
+					inbound.Address,
+				)
+				return
+			}
 			for {
-				in, _ := proxy.Inbounds[index].Accept()
+				in, err := inbound.Accept()
+				if err != nil {
+					log.Printf(
+						"inbound on %s failed to accept!\n",
+						inbound.Address,
+					)
+					continue
+				}
 				go proxy.proxy(in)
 			}
-		}(index)
+		}(inbound)
 	}
 }
 

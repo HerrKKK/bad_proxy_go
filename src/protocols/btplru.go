@@ -36,13 +36,12 @@ func (queue *StringQueue) Push(value string) (err error) { // from back
 	return
 }
 
-func (queue *StringQueue) Pop() (res string, err error) { // from front
+func (queue *StringQueue) Pop() (res string) { // from front
 	queue.lock.Lock()
 	defer queue.lock.Unlock()
 
 	if queue.size() == 0 {
-		err = errors.New("no elements")
-		return
+		panic("should never happen")
 	}
 	res = queue.data[queue.head]
 	capacity := len(queue.data)
@@ -101,8 +100,7 @@ func (lru *BtpLRU) Add(key string) (err error) {
 	}
 
 	if lru.queue.size() == lru.maxSize {
-		oldest, _ := lru.queue.Pop()
-		delete(lru.data, oldest)
+		delete(lru.data, lru.queue.Pop())
 	}
 
 	lru.data[key] = true

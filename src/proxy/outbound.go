@@ -69,10 +69,9 @@ type FreeOutbound struct {
 }
 
 func (outbound *FreeOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	// pointer receiver: just implement the method of *FreeOutbound
 	_ = targetAddr
 	_, err = outbound.conn.Write(payload)
-	return err
+	return
 }
 
 func (outbound *FreeOutbound) Read(b []byte) (int, error) {
@@ -96,9 +95,12 @@ type BtpOutbound struct {
 }
 
 func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	payload, _ = protocols.EncodeBtpRequest(targetAddr, payload, outbound.secret)
+	payload, err = protocols.EncodeBtpRequest(targetAddr, payload, outbound.secret)
+	if err != nil {
+		return
+	}
 	_, err = outbound.conn.Write(payload)
-	return err
+	return
 }
 
 func (outbound *BtpOutbound) Read(b []byte) (int, error) {
