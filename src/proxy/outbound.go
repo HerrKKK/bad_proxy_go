@@ -8,6 +8,7 @@ import (
 )
 
 type OutboundConfig struct {
+	Tag      string `json:"tag"`
 	Secret   string `json:"secret"`
 	Host     string `json:"host"`
 	Port     string `json:"port"`
@@ -17,6 +18,7 @@ type OutboundConfig struct {
 }
 
 type Outbound struct {
+	Tag      string
 	Secret   string
 	Address  string
 	Protocol string

@@ -8,7 +8,7 @@ import (
 
 type Proxy struct {
 	Inbounds  []Inbound
-	Outbounds []Outbound
+	Outbounds map[string]*Outbound
 	Fallback  FallbackConfig
 }
 
@@ -20,6 +20,7 @@ type Config struct {
 
 func NewProxy(config Config) (newProxy Proxy) {
 	newProxy.Fallback = config.Fallback
+	newProxy.Outbounds = make(map[string]*Outbound, 10)
 	for _, in := range config.Inbounds {
 		newInbound := Inbound{
 			Secret:      in.Secret,
@@ -35,13 +36,18 @@ func NewProxy(config Config) (newProxy Proxy) {
 
 	for _, out := range config.Outbounds {
 		newOutbound := Outbound{
+			Tag:      out.Tag,
 			Secret:   out.Secret,
 			Address:  out.Host + ":" + out.Port,
 			Protocol: out.Protocol,
 			Transmit: transport.GetProtocol(out.Transmit),
 			WsPath:   out.WsPath,
 		}
-		newProxy.Outbounds = append(newProxy.Outbounds, newOutbound)
+		_, exist := newProxy.Outbounds[out.Tag]
+		if exist == true {
+			log.Fatalln("duplicate tag")
+		}
+		newProxy.Outbounds[out.Tag] = &newOutbound
 	}
 	return
 }
@@ -95,5 +101,5 @@ func (proxy Proxy) proxy(in InboundConnect) {
 
 func (proxy Proxy) route(address string) (outbound Outbound) {
 	_ = address
-	return proxy.Outbounds[0]
+	return *proxy.Outbounds[""]
 }
