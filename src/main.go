@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"go_proxy/proxy"
+	"log"
 	"os"
 )
 
@@ -18,7 +18,7 @@ func main() {
 	flag.Parse()
 	config, err := ReadConfig(configPath)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
