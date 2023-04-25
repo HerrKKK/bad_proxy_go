@@ -1,11 +1,12 @@
 {
-  "inbound": {
+  "inbound": [{
     "host": "0.0.0.0",
     "port": "9999",
     "protocol": "btp",
-    "transmit": "ws"
-  },
-  "outbound": {
+    "transmit": "ws",
+    "ws_path": "/bp"
+  }],
+  "outbound": [{
     "protocol": "freedom"
-  }
+  }]
 }

@@ -2,17 +2,33 @@ package proxy
 
 import (
 	"go_proxy/protocols"
+	"go_proxy/transport"
 	"log"
 	"net"
 )
 
 type Inbound struct {
-	Listener net.Listener
-	Protocol string
-	Transmit string
+	Listener    net.Listener
+	Protocol    string
+	Address     string
+	Transmit    string
+	WsPath      string
+	TlsCertPath string
+	TlsKeyPath  string
 }
 
-func (inbound Inbound) Accept() (InboundConnect, error) {
+func (inbound *Inbound) Listen() (err error) {
+	inbound.Listener, err = transport.Listen(
+		inbound.Address,
+		inbound.Transmit,
+		inbound.WsPath,
+		inbound.TlsCertPath,
+		inbound.TlsKeyPath,
+	)
+	return
+}
+
+func (inbound *Inbound) Accept() (InboundConnect, error) {
 	conn, _ := inbound.Listener.Accept()
 	if inbound.Protocol == "http" {
 		return HttpInbound{conn: conn}, nil
@@ -50,11 +66,16 @@ func (inbound HttpInbound) Connect() (string, []byte, error) {
 		if err != nil {
 			return "", nil, err
 		}
-		log.Println("https connect")
 		buffer = make([]byte, 8196) // clear
 		length, _ = inbound.conn.Read(buffer)
 	}
 	buffer = buffer[:length]
+	log.Println(
+		"http connect from",
+		request.Address,
+		"to",
+		inbound.conn.RemoteAddr(),
+	)
 	return targetAddr, buffer, nil
 }
 
@@ -84,6 +105,12 @@ func (inbound BtpInbound) Connect() (string, []byte, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	log.Println(
+		"btp connect from",
+		request.Address,
+		"to",
+		inbound.conn.RemoteAddr(),
+	)
 	return request.Address, request.Payload, nil
 }
 

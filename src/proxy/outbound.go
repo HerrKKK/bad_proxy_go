@@ -2,8 +2,8 @@ package proxy
 
 import (
 	"errors"
-	"fmt"
 	"go_proxy/transport"
+	"log"
 	"net"
 )
 
@@ -11,42 +11,56 @@ type Outbound struct {
 	Address  string
 	Protocol string
 	Transmit string
+	WsPath   string
 }
 
 func (outbound Outbound) Dial(targetAddr string, payload []byte) (out OutboundConnect, err error) {
-	err = nil
 	if outbound.Protocol == "btp" {
 		// *BtpOutbound implemented OutboundConnect,
 		// here we return the pointer of BtpOutbound, which is an OutboundConnect
 		// simply, *BtpOutbound is OutboundConnect
-		out = &BtpOutbound{address: outbound.Address}
+		var conn, err = transport.Dial(
+			outbound.Address,
+			outbound.Transmit,
+			outbound.WsPath,
+		)
+		if err != nil {
+			log.Println("btp failed to dial to", outbound.Address, ", because", err)
+			return nil, err
+		}
+		log.Println("btp connect to", outbound.Address)
+		out = &BtpOutbound{conn: conn}
 	} else {
-		out = &FreeOutbound{address: targetAddr}
+		var conn, err = transport.Dial(
+			targetAddr,
+			outbound.Transmit,
+			outbound.WsPath,
+		)
+		if err != nil {
+			log.Println("free failed to dial to", outbound.Address, ", because", err)
+			return nil, err
+		}
+		log.Println("free connect to", targetAddr)
+		out = &FreeOutbound{conn: conn}
 	}
-	//outbound.conn, err = transport.Dial(out.address, transmit)
-	out.Connect(targetAddr, payload, outbound.Transmit)
+	err = out.Connect(targetAddr, payload)
 	return
 }
 
 type OutboundConnect interface {
-	Connect(targetAddr string, payload []byte, transmit string) error
+	Connect(targetAddr string, payload []byte) error
 	Read(b []byte) (int, error)
 	Write(b []byte) (int, error)
 	Close() error
 }
 
 type FreeOutbound struct {
-	conn    net.Conn
-	address string
+	conn net.Conn
 }
 
-func (outbound *FreeOutbound) Connect(targetAddr string, payload []byte, transmit string) (err error) {
+func (outbound *FreeOutbound) Connect(targetAddr string, payload []byte) (err error) {
 	// pointer receiver: just implement the method of *FreeOutbound
-	outbound.conn, err = transport.Dial(targetAddr, transmit)
-	if err != nil || payload == nil {
-		fmt.Println("free failed to connect, addr is ", outbound.address)
-		return err
-	}
+	_ = targetAddr
 	_, err = outbound.conn.Write(payload)
 	return err
 }
@@ -67,18 +81,10 @@ func (outbound *FreeOutbound) Close() error {
 }
 
 type BtpOutbound struct {
-	conn    net.Conn
-	address string
+	conn net.Conn
 }
 
-func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte, transmit string) (err error) {
-	outbound.conn, err = transport.Dial(outbound.address, transmit)
-	if err != nil || payload == nil {
-		fmt.Println("btp failed to connect, addr is ", outbound.address)
-		return
-	}
-
-	fmt.Println("btp connect to", outbound.address)
+func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
 	payload = append(
 		[]byte{uint8(len(targetAddr))}, // must less than 255 for uint8
 		append([]byte(targetAddr), payload[:]...)...,

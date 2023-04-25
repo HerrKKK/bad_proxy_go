@@ -8,12 +8,12 @@ import (
 	"net/http"
 )
 
-func Dial(address string, transmit string) (conn net.Conn, err error) {
+func Dial(address string, transmit string, wsPath string) (conn net.Conn, err error) {
 	if transmit == "tls" {
 		return tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
 	} else if transmit == "ws" {
 		return websocket.Dial(
-			"ws://"+address+"/bp",
+			"ws://"+address+wsPath,
 			"",
 			"http://localhost/",
 		)
@@ -21,12 +21,15 @@ func Dial(address string, transmit string) (conn net.Conn, err error) {
 	return net.Dial("tcp", address)
 }
 
-func Listen(address string, transmit string) (listener net.Listener, err error) {
+func Listen(
+	address string,
+	transmit string,
+	wsPath string,
+	tlsCertPath string,
+	tlsKeyPath string,
+) (listener net.Listener, err error) {
 	if transmit == "tls" {
-		cert, err := tls.LoadX509KeyPair(
-			"certs/localhost_certificate.pem",
-			"certs/localhost_key.pem",
-		)
+		cert, err := tls.LoadX509KeyPair(tlsCertPath, tlsKeyPath)
 		if err != nil {
 			log.Println(err)
 			return listener, err
@@ -35,9 +38,9 @@ func Listen(address string, transmit string) (listener net.Listener, err error) 
 		return tls.Listen("tcp", address, config)
 	} else if transmit == "ws" {
 		listener := &WsListener{ch: make(chan net.Conn)}
-		http.Handle("/bp", websocket.Handler(listener.handle))
+		http.Handle(wsPath, websocket.Handler(listener.handle))
 		go http.ListenAndServe(address, nil)
 		return listener, nil
 	}
-	return net.Listen("tcp", address)
+	return net.Listen("tcp", address) // plain tcp
 }

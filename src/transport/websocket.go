@@ -17,7 +17,7 @@ func (listener *WsListener) Accept() (conn net.Conn, err error) {
 }
 
 func (listener *WsListener) Close() error {
-	return nil
+	return nil // close channel
 }
 
 func (listener *WsListener) Addr() net.Addr {

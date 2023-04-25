@@ -1,13 +1,14 @@
 {
-  "inbound": {
+  "inbound": [{
     "host": "0.0.0.0",
     "port": "8080",
     "protocol": "http"
-  },
-  "outbound": {
+  }],
+  "outbound": [{
     "host": "localhost",
     "port": "9999",
     "protocol": "btp",
-    "transmit": "ws"
-  }
+    "transmit": "ws",
+    "ws_path": "/bp"
+  }]
 }

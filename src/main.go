@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"go_proxy/proxy"
-	"go_proxy/transport"
+	"os"
 )
 
 func main() {
@@ -21,20 +21,34 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	listener, _ := transport.Listen(
-		config.Inbound.Host+":"+config.Inbound.Port,
-		config.Inbound.Transmit,
-	)
-	proxy := proxy.Proxy{
-		Inbound: proxy.Inbound{
-			Listener: listener,
-			Protocol: config.Inbound.Protocol,
-		},
-		Outbound: proxy.Outbound{
-			Address:  config.Outbound.Host + ":" + config.Outbound.Port,
-			Protocol: config.Outbound.Protocol,
-			Transmit: config.Outbound.Transmit,
-		},
+
+	mainProxy := newProxy(config)
+	mainProxy.Start()
+	quit := make(chan os.Signal)
+	<-quit
+}
+
+func newProxy(config Config) (newProxy proxy.Proxy) {
+	for _, in := range config.Inbound {
+		newInbound := proxy.Inbound{
+			Address:     in.Host + ":" + in.Port,
+			Protocol:    in.Protocol,
+			Transmit:    in.Transmit,
+			WsPath:      in.WsPath,
+			TlsCertPath: in.TlsCertPath,
+			TlsKeyPath:  in.TlsKeyPath,
+		}
+		newProxy.Inbound = append(newProxy.Inbound, newInbound)
 	}
-	proxy.Proxy()
+
+	for _, out := range config.Outbound {
+		newOutbound := proxy.Outbound{
+			Address:  out.Host + ":" + out.Port,
+			Protocol: out.Protocol,
+			Transmit: out.Transmit,
+			WsPath:   out.WsPath,
+		}
+		newProxy.Outbound = append(newProxy.Outbound, newOutbound)
+	}
+	return
 }
