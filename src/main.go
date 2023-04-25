@@ -24,6 +24,5 @@ func main() {
 
 	mainProxy := proxy.NewProxy(config)
 	mainProxy.Start()
-	quit := make(chan os.Signal)
-	<-quit
+	<-make(chan os.Signal)
 }

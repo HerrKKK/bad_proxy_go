@@ -23,7 +23,7 @@ type Inbound struct {
 	Secret      string
 	Protocol    string
 	Address     string
-	Transmit    string
+	Transmit    transport.ProtocolType
 	WsPath      string
 	TlsCertPath string
 	TlsKeyPath  string

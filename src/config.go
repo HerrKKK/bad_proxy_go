@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+type AppProtType string
+
+const (
+	HTTP AppProtType = "http"
+	BTP  AppProtType = "btp"
+)
+
 func ReadConfig(path string) (config proxy.Config, err error) {
 	file, err := os.ReadFile(path)
 	if err != nil {

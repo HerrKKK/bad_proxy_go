@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"go_proxy/transport"
 	"io"
 	"log"
 )
@@ -21,7 +22,7 @@ func NewProxy(config Config) (newProxy Proxy) {
 			Secret:      in.Secret,
 			Address:     in.Host + ":" + in.Port,
 			Protocol:    in.Protocol,
-			Transmit:    in.Transmit,
+			Transmit:    transport.TransportProtocol(in.Transmit),
 			WsPath:      in.WsPath,
 			TlsCertPath: in.TlsCertPath,
 			TlsKeyPath:  in.TlsKeyPath,
@@ -34,7 +35,7 @@ func NewProxy(config Config) (newProxy Proxy) {
 			Secret:   out.Secret,
 			Address:  out.Host + ":" + out.Port,
 			Protocol: out.Protocol,
-			Transmit: out.Transmit,
+			Transmit: transport.TransportProtocol(out.Transmit),
 			WsPath:   out.WsPath,
 		}
 		newProxy.Outbounds = append(newProxy.Outbounds, newOutbound)

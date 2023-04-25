@@ -41,7 +41,7 @@ func (queue *StringQueue) Pop() (res string) { // from front
 	defer queue.lock.Unlock()
 
 	if queue.size() == 0 {
-		panic("should never happen")
+		panic("no element in the list should never happen")
 	}
 	res = queue.data[queue.head]
 	capacity := len(queue.data)

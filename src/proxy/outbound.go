@@ -20,7 +20,7 @@ type Outbound struct {
 	Secret   string
 	Address  string
 	Protocol string
-	Transmit string
+	Transmit transport.ProtocolType
 	WsPath   string
 }
 

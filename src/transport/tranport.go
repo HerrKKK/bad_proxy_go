@@ -3,44 +3,68 @@ package transport
 import (
 	"crypto/tls"
 	"golang.org/x/net/websocket"
-	"log"
 	"net"
 	"net/http"
 )
 
-func Dial(address string, transmit string, wsPath string) (conn net.Conn, err error) {
-	if transmit == "tls" {
-		return tls.Dial("tcp", address, &tls.Config{InsecureSkipVerify: true})
-	} else if transmit == "ws" || transmit == "wss" {
+type ProtocolType string
+
+const (
+	TCP ProtocolType = "tcp"
+	TLS ProtocolType = "tls"
+	WS  ProtocolType = "ws"
+	WSS ProtocolType = "wss"
+)
+
+func (protocol ProtocolType) Str() string {
+	return string(protocol)
+}
+
+func TransportProtocol(protocol string) ProtocolType {
+	return ProtocolType(protocol)
+}
+
+func Dial(address string, protocol ProtocolType, wsPath string) (conn net.Conn, err error) {
+	switch protocol {
+	case TLS:
+		return tls.Dial(TCP.Str(), address, &tls.Config{InsecureSkipVerify: true})
+	case WS, WSS:
 		return websocket.Dial(
-			transmit+"://"+address+wsPath,
+			protocol.Str()+"://"+address+wsPath,
 			"",
 			"http://localhost/",
 		)
+	default:
+		return net.Dial(TCP.Str(), address)
 	}
-	return net.Dial("tcp", address)
 }
 
 func Listen(
 	address string,
-	transmit string,
+	protocol ProtocolType,
 	wsPath string,
 	tlsCertPath string,
 	tlsKeyPath string,
 ) (listener net.Listener, err error) {
-	if transmit == "tls" {
+	switch protocol {
+	case TLS:
 		cert, err := tls.LoadX509KeyPair(tlsCertPath, tlsKeyPath)
 		if err != nil {
-			log.Println(err)
 			return listener, err
 		}
 		config := &tls.Config{Certificates: []tls.Certificate{cert}}
-		return tls.Listen("tcp", address, config)
-	} else if transmit == "ws" {
+		return tls.Listen(TCP.Str(), address, config)
+	case WS:
 		listener := &WsListener{ch: make(chan net.Conn)}
 		http.Handle(wsPath, websocket.Handler(listener.handle))
-		go http.ListenAndServe(address, nil)
+		go func() {
+			err := http.ListenAndServe(address, nil)
+			if err != nil {
+				panic(err)
+			}
+		}()
 		return listener, nil
+	default:
+		return net.Listen(TCP.Str(), address)
 	}
-	return net.Listen("tcp", address) // plain tcp
 }

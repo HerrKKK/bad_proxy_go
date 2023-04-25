@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"errors"
 	"golang.org/x/net/websocket"
 	"net"
 	"sync"
@@ -13,6 +14,10 @@ type WsListener struct {
 }
 
 func (listener *WsListener) Accept() (conn net.Conn, err error) {
+	if listener.ch == nil {
+		err = errors.New("nil channel")
+		return
+	}
 	return <-listener.ch, nil
 }
 
