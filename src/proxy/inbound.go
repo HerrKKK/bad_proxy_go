@@ -8,6 +8,7 @@ import (
 )
 
 type InboundConfig struct {
+	Secret      string `json:"secret"`
 	Host        string `json:"host"`
 	Port        string `json:"port"`
 	Protocol    string `json:"protocol"`
@@ -19,6 +20,7 @@ type InboundConfig struct {
 
 type Inbound struct {
 	Listener    net.Listener
+	Secret      string
 	Protocol    string
 	Address     string
 	Transmit    string
@@ -96,7 +98,8 @@ func (inbound HttpInbound) Close() error {
 }
 
 type BtpInbound struct {
-	conn net.Conn
+	conn   net.Conn
+	secret string
 }
 
 func (inbound BtpInbound) Connect() (string, []byte, error) {
@@ -106,6 +109,11 @@ func (inbound BtpInbound) Connect() (string, []byte, error) {
 		return "", nil, err
 	}
 	request, err := (&protocols.BTPRequest{}).Parse(buffer[:length])
+	if err != nil {
+		log.Println(err)
+		return "", nil, err
+	}
+	err = request.Validate(inbound.secret)
 	if err != nil {
 		log.Println(err)
 		return "", nil, err

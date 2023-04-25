@@ -5,6 +5,7 @@
     "protocol": "http"
   }],
   "outbound": [{
+    "secret": "c2fb629e-c8a2-4323-80dc-36fc793f57f5",
     "host": "localhost",
     "port": "9999",
     "protocol": "btp",
