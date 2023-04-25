@@ -8,6 +8,6 @@
     "host": "localhost",
     "port": "9999",
     "protocol": "btp",
-    "transmit": "tls"
+    "transmit": "ws"
   }
 }
