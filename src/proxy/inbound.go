@@ -45,7 +45,7 @@ func (inbound *Inbound) Accept() (InboundConnect, error) {
 	if inbound.Protocol == "http" {
 		return HttpInbound{conn: conn}, nil
 	} else if inbound.Protocol == "btp" {
-		return BtpInbound{conn: conn}, nil
+		return BtpInbound{conn: conn, secret: inbound.Secret}, nil
 	}
 	return nil, nil
 }
@@ -108,7 +108,7 @@ func (inbound BtpInbound) Connect() (string, []byte, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	request, err := (&protocols.BTPRequest{}).Parse(buffer[:length])
+	request, err := protocols.ParseBtpRequest(buffer[:length])
 	if err != nil {
 		log.Println(err)
 		return "", nil, err
