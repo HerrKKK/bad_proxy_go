@@ -35,7 +35,6 @@ func (outbound Outbound) Dial(targetAddr string, payload []byte) (out OutboundCo
 			outbound.WsPath,
 		)
 		if err != nil {
-			log.Println("btp failed to dial to", outbound.Address, ", because", err)
 			return nil, err
 		}
 		log.Println("btp connect to", outbound.Address)
@@ -47,7 +46,6 @@ func (outbound Outbound) Dial(targetAddr string, payload []byte) (out OutboundCo
 			outbound.WsPath,
 		)
 		if err != nil {
-			log.Println("free failed to dial to", outbound.Address, ", because", err)
 			return nil, err
 		}
 		log.Println("free connect to", targetAddr)
