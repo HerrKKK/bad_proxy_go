@@ -8,6 +8,7 @@ import (
 )
 
 type OutboundConfig struct {
+	Secret   string `json:"secret"`
 	Host     string `json:"host"`
 	Port     string `json:"port"`
 	Protocol string `json:"protocol"`
@@ -16,6 +17,7 @@ type OutboundConfig struct {
 }
 
 type Outbound struct {
+	Secret   string
 	Address  string
 	Protocol string
 	Transmit string
@@ -37,7 +39,7 @@ func (outbound Outbound) Dial(targetAddr string, payload []byte) (out OutboundCo
 			return nil, err
 		}
 		log.Println("btp connect to", outbound.Address)
-		out = &BtpOutbound{conn: conn}
+		out = &BtpOutbound{conn: conn, secret: outbound.Secret}
 	} else {
 		var conn, err = transport.Dial(
 			targetAddr,
@@ -89,11 +91,12 @@ func (outbound *FreeOutbound) Close() error {
 }
 
 type BtpOutbound struct {
-	conn net.Conn
+	conn   net.Conn
+	secret string
 }
 
 func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	payload, _ = protocols.EncodeBtpRequest(targetAddr, payload)
+	payload, _ = protocols.EncodeBtpRequest(targetAddr, payload, outbound.secret)
 	_, err = outbound.conn.Write(payload)
 	return err
 }

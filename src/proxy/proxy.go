@@ -18,6 +18,7 @@ type Config struct {
 func NewProxy(config Config) (newProxy Proxy) {
 	for _, in := range config.Inbounds {
 		newInbound := Inbound{
+			Secret:      in.Secret,
 			Address:     in.Host + ":" + in.Port,
 			Protocol:    in.Protocol,
 			Transmit:    in.Transmit,
@@ -30,6 +31,7 @@ func NewProxy(config Config) (newProxy Proxy) {
 
 	for _, out := range config.Outbounds {
 		newOutbound := Outbound{
+			Secret:   out.Secret,
 			Address:  out.Host + ":" + out.Port,
 			Protocol: out.Protocol,
 			Transmit: out.Transmit,
