@@ -22,7 +22,7 @@ func NewProxy(config Config) (newProxy Proxy) {
 			Secret:      in.Secret,
 			Address:     in.Host + ":" + in.Port,
 			Protocol:    in.Protocol,
-			Transmit:    transport.TransportProtocol(in.Transmit),
+			Transmit:    transport.GetProtocol(in.Transmit),
 			WsPath:      in.WsPath,
 			TlsCertPath: in.TlsCertPath,
 			TlsKeyPath:  in.TlsKeyPath,
@@ -35,7 +35,7 @@ func NewProxy(config Config) (newProxy Proxy) {
 			Secret:   out.Secret,
 			Address:  out.Host + ":" + out.Port,
 			Protocol: out.Protocol,
-			Transmit: transport.TransportProtocol(out.Transmit),
+			Transmit: transport.GetProtocol(out.Transmit),
 			WsPath:   out.WsPath,
 		}
 		newProxy.Outbounds = append(newProxy.Outbounds, newOutbound)
@@ -49,19 +49,13 @@ func (proxy Proxy) Start() {
 			log.Println("listen on", inbound.Address)
 			err := inbound.Listen()
 			if err != nil {
-				log.Fatalf(
-					"inbound on %s dead!\n",
-					inbound.Address,
-				)
+				log.Fatalf("inbound on %s dead!\n", inbound.Address)
 				return
 			}
 			for {
 				in, err := inbound.Accept()
 				if err != nil {
-					log.Printf(
-						"inbound on %s failed to accept!\n",
-						inbound.Address,
-					)
+					log.Printf("inbound on %s failed to accept!\n", inbound.Address)
 					continue
 				}
 				go proxy.proxy(in)
@@ -72,20 +66,24 @@ func (proxy Proxy) Start() {
 
 func (proxy Proxy) proxy(in InboundConnect) {
 	address, payload, err := in.Connect() // handshake
+	defer in.Close()
 	if err != nil {
+		log.Println("inbound connect failed")
 		return
 	}
 	// routing to find outbound template
 	outbound := proxy.route(address)
 	out, err := outbound.Dial(address, payload) // handshake
+	defer out.Close()
 	if err != nil {
+		log.Printf("outbound dial to %s failed\n", outbound.Address)
 		return
 	}
 	go io.Copy(in, out)
-	io.Copy(out, in)
-
-	in.Close()
-	out.Close()
+	_, _ = io.Copy(out, in)
+	if err != nil {
+		log.Println("in -> out except")
+	}
 }
 
 func (proxy Proxy) route(address string) (outbound Outbound) {
