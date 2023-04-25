@@ -9,14 +9,17 @@ import (
 type Proxy struct {
 	Inbounds  []Inbound
 	Outbounds []Outbound
+	Fallback  FallbackConfig
 }
 
 type Config struct {
 	Inbounds  []InboundConfig  `json:"inbound"`
 	Outbounds []OutboundConfig `json:"outbound"`
+	Fallback  FallbackConfig   `json:"fallback"`
 }
 
 func NewProxy(config Config) (newProxy Proxy) {
+	newProxy.Fallback = config.Fallback
 	for _, in := range config.Inbounds {
 		newInbound := Inbound{
 			Secret:      in.Secret,
@@ -44,6 +47,9 @@ func NewProxy(config Config) (newProxy Proxy) {
 }
 
 func (proxy Proxy) Start() {
+	if proxy.Fallback.LocalAddr != "" && proxy.Fallback.RemoteAddr != "" {
+		go StartReverseProxy(proxy.Fallback.LocalAddr, proxy.Fallback.RemoteAddr)
+	}
 	for _, inbound := range proxy.Inbounds {
 		go func(inbound Inbound) {
 			log.Println("listen on", inbound.Address)
@@ -68,7 +74,8 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	address, payload, err := in.Connect() // handshake
 	defer in.Close()
 	if err != nil {
-		log.Println("inbound connect failed")
+		log.Println("inbound connect failed, start fallback", err)
+		in.Fallback(proxy.Fallback.LocalAddr, payload)
 		return
 	}
 	// routing to find outbound template

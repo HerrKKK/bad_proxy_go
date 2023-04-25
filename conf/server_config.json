@@ -9,5 +9,9 @@
   }],
   "outbound": [{
     "protocol": "freedom"
-  }]
+  }],
+  "fallback": {
+    "local_addr": "localhost:80",
+    "remote_addr": "localhost:8000"
+  }
 }

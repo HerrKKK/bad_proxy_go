@@ -57,7 +57,7 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 	lru = GetBtpCache()
 	err = lru.Add(request.digest)
 	if err != nil {
-		return err
+		return err // possible replay attack
 	}
 
 	if request.headerLen != btpHeaderLen {
