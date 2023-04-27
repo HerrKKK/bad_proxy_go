@@ -8,9 +8,11 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"go_proxy/structure"
 	"math/big"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -40,6 +42,18 @@ type BTPRequest struct {
 	rawdata      []byte
 }
 
+var btpLRU *structure.LRU[string]
+var once sync.Once
+
+func GetBtpCache() *structure.LRU[string] {
+	once.Do(func() {
+		instance := &structure.LRU[string]{}
+		instance.Init(210000)
+		btpLRU = instance
+	})
+	return btpLRU
+}
+
 func (request *BTPRequest) Validate(secret string) (err error) {
 	if request.confusionLen < 0 || request.confusionLen > btpMaxConfusionLen {
 		return errors.New("unexpected confusion length")
@@ -54,7 +68,7 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 		return errors.New("digest mismatch, unauthorized connect")
 	}
 
-	lru = GetBtpCache()
+	lru := GetBtpCache()
 	err = lru.Add(request.digest)
 	if err != nil {
 		return err // possible replay attack
