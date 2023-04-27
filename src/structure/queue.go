@@ -62,11 +62,11 @@ func (queue *Queue[T]) size() int { // concurrent INSECURE
 
 func (queue *Queue[T]) expand() (err error) {
 	capacity := len(queue.data)
-	if capacity == queue.maxSize {
+	if queue.maxSize > 0 && capacity == queue.maxSize {
 		return errors.New("reach max size")
 	}
 	newCapacity := capacity * 2
-	if newCapacity > queue.maxSize {
+	if queue.maxSize > 0 && newCapacity > queue.maxSize {
 		newCapacity = queue.maxSize
 	}
 	size := queue.size()
