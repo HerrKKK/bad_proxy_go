@@ -1,0 +1,160 @@
+package router
+
+import (
+	"bufio"
+	"errors"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+type Entry struct {
+	Type  string // full, domain, regexp, include
+	Value string
+}
+
+type List struct {
+	Name  string
+	Entry []Entry
+}
+
+type ParsedList struct {
+	Name      string
+	Inclusion map[string]bool
+	Entry     []Entry
+}
+
+func removeCommentAttr(line string) string {
+	idx := strings.Index(line, "#")
+	if idx != -1 {
+		line = strings.TrimSpace(line[:idx])
+	}
+	idx = strings.Index(line, "@")
+	if idx != -1 {
+		line = strings.TrimSpace(line[:idx])
+	}
+	return line
+}
+
+func ParseRules(ruleName string) (
+	fullDomains []string,
+	regexStrs []string,
+	domains []string,
+) {
+	_ = ruleName
+	allRules, err := readAllFromFile("rules")
+	if err != nil {
+		log.Println("failed to read rules from file")
+		return
+	}
+	for _, pl := range allRules {
+		log.Println("rule name:", pl.Name)
+	}
+	log.Printf("%d rule parsed\n", len(allRules))
+	return
+}
+
+func readAllFromFile(dir string) (allRules map[string]*ParsedList, err error) {
+	listRef := make(map[string]*List)
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		list, err := LoadFile(path)
+		if err != nil {
+			return err
+		}
+		listRef[list.Name] = list
+		return nil
+	})
+	allRules = make(map[string]*ParsedList, len(listRef))
+	for _, l := range listRef {
+		parsedList, err := parseList(l, listRef)
+		if err != nil {
+			log.Println("err on parsing list", err)
+			continue
+		}
+		allRules[l.Name] = parsedList
+	}
+	return
+}
+
+func LoadFile(path string) (list *List, err error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	list = &List{Name: strings.ToUpper(filepath.Base(path))}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		line = removeCommentAttr(line)
+		if len(line) == 0 {
+			continue
+		}
+		entry, err := parseDomain(line)
+		if err != nil {
+			return list, err
+		}
+		list.Entry = append(list.Entry, *entry)
+	}
+	return
+}
+
+func parseDomain(domain string) (*Entry, error) {
+	entry := Entry{}
+	kv := strings.Split(domain, ":")
+	if len(kv) == 1 { // prefix omitted
+		entry.Type = "domain"
+		entry.Value = strings.ToLower(kv[0])
+		return &entry, nil
+	}
+
+	if len(kv) == 2 {
+		entry.Type = strings.ToLower(kv[0])
+		entry.Value = strings.ToLower(kv[1])
+		return &entry, nil
+	}
+
+	return nil, errors.New("Invalid format: " + domain)
+}
+
+func parseList(list *List, listRef map[string]*List) (*ParsedList, error) {
+	pl := &ParsedList{
+		Name:      list.Name,
+		Inclusion: make(map[string]bool),
+	}
+	entryList := list.Entry
+	hasInclude := true
+	for hasInclude == true { // read inclusion recursively
+		newEntryList := make([]Entry, 0, len(entryList))
+		for _, entry := range entryList {
+			if entry.Type == "include" {
+				refName := strings.ToUpper(entry.Value)
+				InclusionName := refName
+				if pl.Inclusion[InclusionName] { // skip existed inclusion
+					continue
+				}
+				pl.Inclusion[InclusionName] = true
+				refList := listRef[refName]
+				if refList == nil {
+					return nil, errors.New(entry.Value + " not found.")
+				}
+				newEntryList = append(newEntryList, refList.Entry...)
+			} else {
+				newEntryList = append(newEntryList, entry)
+				hasInclude = false
+			}
+		}
+		entryList = newEntryList
+	}
+	pl.Entry = entryList
+
+	return pl, nil
+}
