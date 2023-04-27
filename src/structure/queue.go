@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type Queue[T string] struct {
+type Queue[T string | *Trie] struct {
 	data    []T
 	head    int
 	tail    int
@@ -13,7 +13,7 @@ type Queue[T string] struct {
 	lock    *sync.Mutex
 }
 
-func NewQueue[T string](maxSize int, initSize int) (queue *Queue[T]) {
+func NewQueue[T string | *Trie](maxSize int, initSize int) (queue *Queue[T]) {
 	queue = &Queue[T]{
 		data:    make([]T, initSize),
 		maxSize: maxSize,
