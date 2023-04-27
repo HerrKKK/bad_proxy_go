@@ -37,24 +37,6 @@ func removeCommentAttr(line string) string {
 	return line
 }
 
-func ParseRules(ruleName string) (
-	fullDomains []string,
-	regexStrs []string,
-	domains []string,
-) {
-	_ = ruleName
-	allRules, err := readAllFromFile("rules")
-	if err != nil {
-		log.Println("failed to read rules from file")
-		return
-	}
-	for _, pl := range allRules {
-		log.Println("rule name:", pl.Name)
-	}
-	log.Printf("%d rule parsed\n", len(allRules))
-	return
-}
-
 func readAllFromFile(dir string) (allRules map[string]*ParsedList, err error) {
 	listRef := make(map[string]*List)
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {

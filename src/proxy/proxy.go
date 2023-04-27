@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"go_proxy/router"
 	"go_proxy/transport"
 	"io"
 	"log"
@@ -11,7 +12,7 @@ type Proxy struct {
 	Inbounds  []Inbound
 	Outbounds map[string]*Outbound
 	Fallback  FallbackConfig
-	router    Router
+	routers   []router.Router
 }
 
 type Config struct {
@@ -24,7 +25,20 @@ type Config struct {
 func NewProxy(config Config) (newProxy Proxy) {
 	newProxy.Fallback = config.Fallback
 	newProxy.Outbounds = make(map[string]*Outbound, 10)
-	newProxy.router = NewRouter(config.Router)
+	newProxy.routers = make([]router.Router, 0)
+	for _, r := range config.Router {
+		rules := make([]string, 0)
+		for _, rule := range r.Rules {
+			rules = append(rules, rule)
+		}
+		newRouter, err := router.NewRouter(r.Tag, rules)
+		if err != nil {
+			log.Println("wrong router:", r.Tag)
+			continue
+		}
+		newProxy.routers = append(newProxy.routers, *newRouter)
+	}
+
 	for _, in := range config.Inbounds {
 		newInbound := Inbound{
 			Secret:      in.Secret,
@@ -103,7 +117,14 @@ func (proxy Proxy) proxy(in InboundConnect) {
 func (proxy Proxy) route(address string) (outbound Outbound) {
 	// If s does not contain sep and sep is not empty,
 	// Split returns a slice of length 1 whose only element is s
+	tag := ""
 	host := strings.Split(address, ":")[0]
-	tag := proxy.router.route(host)
+	log.Println("before routing")
+	for _, r := range proxy.routers {
+		if r.MatchAny(host) == true {
+			tag = r.Tag
+		}
+	}
+	log.Println("tag is", tag)
 	return *proxy.Outbounds[tag]
 }

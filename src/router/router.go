@@ -2,7 +2,9 @@ package router
 
 import (
 	"go_proxy/structure"
+	"log"
 	"regexp"
+	"strings"
 )
 
 type Matcher interface {
@@ -58,10 +60,13 @@ func NewACAutomatonMatcher(domains []string) *Matcher {
 	return &matcher
 }
 
-type Router []Matcher
+type Router struct {
+	Tag      string
+	matchers []Matcher
+}
 
 func (router Router) MatchAny(key string) bool {
-	for _, m := range router {
+	for _, m := range router.matchers {
 		if m.MatchAny(key) {
 			return true
 		}
@@ -69,14 +74,42 @@ func (router Router) MatchAny(key string) bool {
 	return false
 }
 
-func NewRouter(
-	fullDomains []string,
-	RegexStrs []string,
-	domains []string,
-) *Router {
-	matchers := make([]Matcher, 0)
-	matchers = append(matchers, *NewFullMatcher(fullDomains))
-	matchers = append(matchers, *NewRegexMatcher(RegexStrs))
-	matchers = append(matchers, *NewACAutomatonMatcher(domains))
-	return (*Router)(&matchers)
+func NewRouter(tag string, ruleNames []string) (router *Router, err error) {
+	allRules, err := readAllFromFile("rules")
+	if err != nil {
+		log.Println("failed to read rules from file")
+		return
+	}
+
+	fullDomains := make([]string, 0)
+	domains := make([]string, 0)
+	RegexStrs := make([]string, 0)
+	for _, ruleName := range ruleNames {
+		ruleList, _ := allRules[strings.ToUpper(ruleName)]
+		for _, entry := range ruleList.Entry {
+			switch entry.Type {
+			case "full":
+				fullDomains = append(fullDomains, entry.Value)
+			case "domain":
+				domains = append(domains, entry.Value)
+			case "regexp":
+				RegexStrs = append(RegexStrs, entry.Value)
+			default:
+				// include here
+			}
+		}
+	}
+	router = &Router{
+		Tag:      tag,
+		matchers: make([]Matcher, 0),
+	}
+	log.Printf(
+		"%d rules with %d domains loaded\n",
+		len(allRules),
+		len(fullDomains)+len(RegexStrs)+len(domains),
+	)
+	router.matchers = append(router.matchers, *NewFullMatcher(fullDomains))
+	router.matchers = append(router.matchers, *NewRegexMatcher(RegexStrs))
+	//router.matchers = append(router.matchers, *NewACAutomatonMatcher(domains))
+	return
 }

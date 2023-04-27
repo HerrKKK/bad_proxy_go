@@ -22,8 +22,8 @@ type Router struct {
 	rules []Rule
 }
 
-func NewRouter(configs []RuleConfig) (router Router) {
-	router = Router{rules: make([]Rule, 0)}
+func NewRouter(configs []RuleConfig) (router *Router) {
+	router = &Router{rules: make([]Rule, 0)}
 	for _, config := range configs {
 		router.rules = append(router.rules, NewRule(config.Tag, config.Rules))
 	}
