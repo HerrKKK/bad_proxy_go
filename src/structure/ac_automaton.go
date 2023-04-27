@@ -1,7 +1,5 @@
 package structure
 
-import "log"
-
 func NewTrie() *ACAutomaton {
 	trie := &ACAutomaton{
 		success: make(map[uint8]*ACAutomaton),
@@ -45,9 +43,6 @@ func NewACAutomaton(patterns []string) *ACAutomaton {
 func (root *ACAutomaton) MatchAny(key string) bool {
 	curr := root
 	for i := range key {
-		if curr.emit == true {
-			return true
-		}
 		success, exist := curr.success[key[i]]
 		for exist == false && curr != root {
 			curr = curr.failure
@@ -56,6 +51,9 @@ func (root *ACAutomaton) MatchAny(key string) bool {
 		if exist == true {
 			curr = success
 		} // else: curr == root, curr = root
+		if curr.emit == true {
+			return true
+		}
 	}
 	return false
 }
@@ -91,16 +89,4 @@ func (root *ACAutomaton) build() {
 			}
 		}
 	}
-}
-
-func Test() {
-	var patterns = [256]string{
-		"he",
-		"she",
-		"his",
-		"her",
-	}
-	ac := NewACAutomaton(patterns[:])
-	res := ac.MatchAny("oafaagashezafaheagamngadionga")
-	log.Println("res is", res)
 }

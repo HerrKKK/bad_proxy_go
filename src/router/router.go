@@ -7,44 +7,42 @@ import (
 	"strings"
 )
 
+type Config struct {
+	Tag   string   `json:"tag"`
+	Rules []string `json:"rules"`
+}
+
 type Matcher interface {
 	MatchAny(key string) bool
 }
 
 type FullMatcher map[string]bool
 
-func (matcher *FullMatcher) MatchAny(key string) bool {
-	_, exist := (*matcher)[key]
+func (matcher FullMatcher) MatchAny(key string) bool {
+	_, exist := matcher[key]
 	return exist
 }
 
-func NewFullMatcher(fullDomains []string) *Matcher {
-	var matcher Matcher
-	var fullMatcher FullMatcher
-	m := make(map[string]bool, len(fullDomains))
-	fullMatcher = m
+func NewFullMatcher(fullDomains []string) Matcher {
+	var fullMatcher FullMatcher = make(map[string]bool, len(fullDomains))
 	for _, domain := range fullDomains {
 		fullMatcher[domain] = true
 	}
-	matcher = &fullMatcher
-	return &matcher
+	return fullMatcher
 }
 
 type RegexMatcher []*regexp.Regexp
 
-func NewRegexMatcher(RegexStrs []string) *Matcher {
-	var matcher Matcher
-	var regexMatcher RegexMatcher
-	regexMatcher = make([]*regexp.Regexp, len(RegexStrs))
+func NewRegexMatcher(RegexStrs []string) Matcher {
+	var regexMatcher RegexMatcher = make([]*regexp.Regexp, len(RegexStrs))
 	for i, ex := range RegexStrs {
 		regexMatcher[i] = regexp.MustCompile(ex)
 	}
-	matcher = &regexMatcher
-	return &matcher
+	return regexMatcher
 }
 
-func (matcher *RegexMatcher) MatchAny(key string) bool {
-	for _, re := range *matcher {
+func (matcher RegexMatcher) MatchAny(key string) bool {
+	for _, re := range matcher {
 		if re.MatchString(key) {
 			return true
 		}
@@ -52,12 +50,13 @@ func (matcher *RegexMatcher) MatchAny(key string) bool {
 	return false
 }
 
-func NewACAutomatonMatcher(domains []string) *Matcher {
-	var matcher Matcher
-	var acMatcher structure.ACAutomaton
-	acMatcher = *structure.NewACAutomaton(domains)
-	matcher = &acMatcher
-	return &matcher
+func NewACAutomatonMatcher(domains []string) Matcher {
+	//var matcher Matcher
+	//var acMatcher structure.ACAutomaton
+	//acMatcher = *structure.NewACAutomaton(domains)
+	//matcher = &acMatcher
+	//return &matcher //!!!THIS DOES NOT WORK, GREAT OBSTACLE
+	return structure.NewACAutomaton(domains)
 }
 
 type Router struct {
@@ -108,8 +107,8 @@ func NewRouter(tag string, ruleNames []string) (router *Router, err error) {
 		len(allRules),
 		len(fullDomains)+len(RegexStrs)+len(domains),
 	)
-	router.matchers = append(router.matchers, *NewFullMatcher(fullDomains))
-	router.matchers = append(router.matchers, *NewRegexMatcher(RegexStrs))
-	//router.matchers = append(router.matchers, *NewACAutomatonMatcher(domains))
+	router.matchers = append(router.matchers, NewFullMatcher(fullDomains))
+	router.matchers = append(router.matchers, NewRegexMatcher(RegexStrs))
+	router.matchers = append(router.matchers, NewACAutomatonMatcher(domains))
 	return
 }
