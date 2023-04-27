@@ -1,8 +1,8 @@
 package structure
 
-func NewTrie() *Trie {
-	trie := &Trie{
-		success: make(map[uint8]*Trie),
+func NewTrie() *ACAutomaton {
+	trie := &ACAutomaton{
+		success: make(map[uint8]*ACAutomaton),
 		failure: nil,
 		emit:    false,
 	}
@@ -10,14 +10,14 @@ func NewTrie() *Trie {
 	return trie
 }
 
-type Trie struct {
-	success map[uint8]*Trie
-	failure *Trie
+type ACAutomaton struct {
+	success map[uint8]*ACAutomaton
+	failure *ACAutomaton
 	emit    bool
 }
 
-func (trie *Trie) Add(value string) {
-	curr := trie
+func (root *ACAutomaton) Add(value string) {
+	curr := root
 	for i := range value {
 		ch := value[i]
 		_, exist := curr.success[ch]
@@ -31,12 +31,17 @@ func (trie *Trie) Add(value string) {
 	}
 }
 
-type ACAutomaton struct {
-	root *Trie
+func NewACAutomaton(patterns []string) *ACAutomaton {
+	ac := NewTrie()
+	for _, pattern := range patterns {
+		ac.Add(pattern)
+	}
+	ac.build()
+	return ac
 }
 
-func (ac *ACAutomaton) MatchAny(key string) bool {
-	curr := ac.root
+func (root *ACAutomaton) MatchAny(key string) bool {
+	curr := root
 	count := 0
 	for i := range key {
 		count += 1
@@ -44,30 +49,21 @@ func (ac *ACAutomaton) MatchAny(key string) bool {
 			return true
 		}
 		success, exist := curr.success[key[i]]
-		for exist == false && curr != ac.root {
+		for exist == false && curr != root {
 			count += 1
 			curr = curr.failure
 			success, exist = curr.success[key[i]]
 		}
 		if exist == true {
 			curr = success
-		} // else: curr == ac.root, curr = ac.root
+		} // else: curr == root, curr = root
 	}
 	return false
 }
 
-func NewACAutomaton(patterns []string) *ACAutomaton {
-	ac := &ACAutomaton{root: NewTrie()}
-	for _, pattern := range patterns {
-		ac.root.Add(pattern)
-	}
-	ac.Build()
-	return ac
-}
-
-func (ac *ACAutomaton) Build() {
-	queue := NewQueue[*Trie](0, 1000)
-	err := queue.Push(ac.root)
+func (root *ACAutomaton) build() {
+	queue := NewQueue[*ACAutomaton](0, 1000)
+	err := queue.Push(root)
 	if err != nil {
 		panic(err) // should never happen
 	}
@@ -80,8 +76,8 @@ func (ac *ACAutomaton) Build() {
 			}
 			s3 := s2.failure // s3: s2's failure state
 			for {
-				if s3 == ac.root {
-					s1.failure = ac.root
+				if s3 == root {
+					s1.failure = root
 					break
 				}
 				s4, exist := s3.success[c] // s4: s3's success state with c
