@@ -1,5 +1,7 @@
 package structure
 
+import "log"
+
 func NewTrie() *ACAutomaton {
 	trie := &ACAutomaton{
 		success: make(map[uint8]*ACAutomaton),
@@ -42,15 +44,12 @@ func NewACAutomaton(patterns []string) *ACAutomaton {
 
 func (root *ACAutomaton) MatchAny(key string) bool {
 	curr := root
-	count := 0
 	for i := range key {
-		count += 1
 		if curr.emit == true {
 			return true
 		}
 		success, exist := curr.success[key[i]]
 		for exist == false && curr != root {
-			count += 1
 			curr = curr.failure
 			success, exist = curr.success[key[i]]
 		}
@@ -65,22 +64,25 @@ func (root *ACAutomaton) build() {
 	queue := NewQueue[*ACAutomaton](0, 1000)
 	err := queue.Push(root)
 	if err != nil {
-		panic(err) // should never happen
+		panic(err)
 	}
 	for queue.Size() != 0 { // bfs without layer
-		s2 := queue.Pop()               // s2: s1 is s2's success state with c
-		for c, s1 := range s2.success { // s1: state we are finding failure for
+		s2 := queue.Pop()
+		if s2 == nil {
+			panic("s2 is nil")
+		}
+		for c, s1 := range s2.success {
 			err = queue.Push(s1)
 			if err != nil {
 				panic(err)
 			}
-			s3 := s2.failure // s3: s2's failure state
+			s3 := s2.failure
 			for {
 				if s3 == root {
 					s1.failure = root
 					break
 				}
-				s4, exist := s3.success[c] // s4: s3's success state with c
+				s4, exist := s3.success[c]
 				if exist == true {
 					s1.failure = s4
 					break
@@ -89,4 +91,16 @@ func (root *ACAutomaton) build() {
 			}
 		}
 	}
+}
+
+func Test() {
+	var patterns = [256]string{
+		"he",
+		"she",
+		"his",
+		"her",
+	}
+	ac := NewACAutomaton(patterns[:])
+	res := ac.MatchAny("oafaagashezafaheagamngadionga")
+	log.Println("res is", res)
 }

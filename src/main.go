@@ -3,9 +3,17 @@ package main
 import (
 	"flag"
 	"go_proxy/proxy"
+	"go_proxy/structure"
 	"log"
 	"os"
 )
+
+var patterns = [256]string{
+	"he",
+	"she",
+	"his",
+	"her",
+}
 
 func main() {
 	var configPath string
@@ -21,7 +29,7 @@ func main() {
 		log.Println(err)
 		return
 	}
-
+	structure.Test()
 	mainProxy := proxy.NewProxy(config)
 	mainProxy.Start()
 	<-make(chan os.Signal)
