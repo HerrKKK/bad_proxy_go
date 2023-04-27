@@ -18,7 +18,7 @@ type Proxy struct {
 type Config struct {
 	Inbounds  []InboundConfig  `json:"inbounds"`
 	Outbounds []OutboundConfig `json:"outbounds"`
-	Router    []RuleConfig     `json:"routers"`
+	Router    []router.Config  `json:"routers"`
 	Fallback  FallbackConfig   `json:"fallback"`
 }
 
@@ -119,12 +119,10 @@ func (proxy Proxy) route(address string) (outbound Outbound) {
 	// Split returns a slice of length 1 whose only element is s
 	tag := ""
 	host := strings.Split(address, ":")[0]
-	log.Println("before routing")
 	for _, r := range proxy.routers {
 		if r.MatchAny(host) == true {
 			tag = r.Tag
 		}
 	}
-	log.Println("tag is", tag)
 	return *proxy.Outbounds[tag]
 }
