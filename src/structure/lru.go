@@ -15,7 +15,7 @@ type LRU[T string] struct {
 func (lru *LRU[T]) Init(maxSize int) {
 	lru.maxSize = maxSize
 	lru.data = make(map[T]bool, lru.maxSize)
-	lru.queue = NewQueue[T](lru.maxSize, 2)
+	lru.queue = NewQueue[T](lru.maxSize, maxSize)
 	lru.lock = new(sync.Mutex)
 }
 
