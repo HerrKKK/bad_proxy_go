@@ -66,9 +66,6 @@ func (root *ACAutomaton) build() {
 	}
 	for queue.Size() != 0 { // bfs without layer
 		s2 := queue.Pop()
-		if s2 == nil {
-			panic("s2 is nil")
-		}
 		for c, s1 := range s2.success {
 			err = queue.Push(s1)
 			if err != nil {
