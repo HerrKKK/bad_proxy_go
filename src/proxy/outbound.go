@@ -18,34 +18,34 @@ type OutboundConfig struct {
 }
 
 type Outbound struct {
-	Tag      string
-	Secret   string
-	Address  string
-	Protocol string
-	Transmit transport.ProtocolType
-	WsPath   string
+	tag      string
+	secret   string
+	address  string
+	protocol string
+	transmit transport.ProtocolType
+	wsPath   string
 }
 
 func (outbound Outbound) Dial(targetAddr string, payload []byte) (out OutboundConnect, err error) {
-	if outbound.Protocol == "btp" {
+	if outbound.protocol == "btp" {
 		// *BtpOutbound implemented OutboundConnect,
 		// here we return the pointer of BtpOutbound, which is an OutboundConnect
 		// simply, *BtpOutbound is OutboundConnect
 		var conn, err = transport.Dial(
-			outbound.Address,
-			outbound.Transmit,
-			outbound.WsPath,
+			outbound.address,
+			outbound.transmit,
+			outbound.wsPath,
 		)
 		if err != nil {
 			return nil, err
 		}
-		log.Println("btp connect to", outbound.Address)
-		out = &BtpOutbound{conn: conn, secret: outbound.Secret}
+		log.Println("btp connect to", outbound.address)
+		out = &BtpOutbound{conn: conn, secret: outbound.secret}
 	} else {
 		var conn, err = transport.Dial(
 			targetAddr,
-			outbound.Transmit,
-			outbound.WsPath,
+			outbound.transmit,
+			outbound.wsPath,
 		)
 		if err != nil {
 			return nil, err

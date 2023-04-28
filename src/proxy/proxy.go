@@ -9,9 +9,9 @@ import (
 )
 
 type Proxy struct {
-	Inbounds  []Inbound
-	Outbounds map[string]*Outbound
-	Fallback  FallbackConfig
+	inbounds  []Inbound
+	outbounds map[string]*Outbound
+	fallback  FallbackConfig
 	routers   []router.Router
 }
 
@@ -24,8 +24,8 @@ type Config struct {
 }
 
 func NewProxy(config Config) (newProxy Proxy) {
-	newProxy.Fallback = config.Fallback
-	newProxy.Outbounds = make(map[string]*Outbound, 10)
+	newProxy.fallback = config.Fallback
+	newProxy.outbounds = make(map[string]*Outbound, 10)
 	newProxy.routers = make([]router.Router, 0)
 	for _, r := range config.Router {
 		rules := make([]string, 0)
@@ -42,51 +42,51 @@ func NewProxy(config Config) (newProxy Proxy) {
 
 	for _, in := range config.Inbounds {
 		newInbound := Inbound{
-			Secret:      in.Secret,
-			Address:     in.Host + ":" + in.Port,
-			Protocol:    in.Protocol,
-			Transmit:    transport.GetProtocol(in.Transmit),
-			WsPath:      in.WsPath,
-			TlsCertPath: in.TlsCertPath,
-			TlsKeyPath:  in.TlsKeyPath,
+			secret:      in.Secret,
+			address:     in.Host + ":" + in.Port,
+			protocol:    in.Protocol,
+			transmit:    transport.GetProtocol(in.Transmit),
+			wsPath:      in.WsPath,
+			tlsCertPath: in.TlsCertPath,
+			tlsKeyPath:  in.TlsKeyPath,
 		}
-		newProxy.Inbounds = append(newProxy.Inbounds, newInbound)
+		newProxy.inbounds = append(newProxy.inbounds, newInbound)
 	}
 
 	for _, out := range config.Outbounds {
 		newOutbound := Outbound{
-			Tag:      out.Tag,
-			Secret:   out.Secret,
-			Address:  out.Host + ":" + out.Port,
-			Protocol: out.Protocol,
-			Transmit: transport.GetProtocol(out.Transmit),
-			WsPath:   out.WsPath,
+			tag:      out.Tag,
+			secret:   out.Secret,
+			address:  out.Host + ":" + out.Port,
+			protocol: out.Protocol,
+			transmit: transport.GetProtocol(out.Transmit),
+			wsPath:   out.WsPath,
 		}
-		_, exist := newProxy.Outbounds[out.Tag]
+		_, exist := newProxy.outbounds[out.Tag]
 		if exist == true {
 			log.Fatalln("duplicate outbound tag")
 		}
-		newProxy.Outbounds[out.Tag] = &newOutbound
+		newProxy.outbounds[out.Tag] = &newOutbound
 	}
 	return
 }
 
 func (proxy Proxy) Start() {
-	if proxy.Fallback.LocalAddr != "" && proxy.Fallback.RemoteAddr != "" {
-		go StartReverseProxy(proxy.Fallback.LocalAddr, proxy.Fallback.RemoteAddr)
+	if proxy.fallback.LocalAddr != "" && proxy.fallback.RemoteAddr != "" {
+		go StartReverseProxy(proxy.fallback.LocalAddr, proxy.fallback.RemoteAddr)
 	}
-	for _, inbound := range proxy.Inbounds {
+	for _, inbound := range proxy.inbounds {
 		go func(inbound Inbound) {
-			log.Println("listen on", inbound.Address)
+			log.Println("listen on", inbound.address)
 			err := inbound.Listen()
 			if err != nil {
-				log.Fatalf("inbound on %s dead!\n", inbound.Address)
+				log.Fatalf("inbound on %s dead!\n", inbound.address)
 				return
 			}
 			for {
 				in, err := inbound.Accept()
 				if err != nil {
-					log.Printf("inbound on %s failed to accept!\n", inbound.Address)
+					log.Printf("inbound on %s failed to accept!\n", inbound.address)
 					continue
 				}
 				go proxy.proxy(in)
@@ -100,7 +100,7 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	defer in.Close()
 	if err != nil {
 		log.Println("inbound connect failed:", err)
-		in.Fallback(proxy.Fallback.LocalAddr, payload)
+		in.Fallback(proxy.fallback.LocalAddr, payload)
 		return
 	}
 	// routing to find outbound template
@@ -108,7 +108,7 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	out, err := outbound.Dial(address, payload) // handshake
 	defer out.Close()
 	if err != nil {
-		log.Printf("outbound dial to %s failed\n", outbound.Address)
+		log.Printf("outbound dial to %s failed\n", outbound.address)
 		return
 	}
 	go io.Copy(in, out)
@@ -125,5 +125,5 @@ func (proxy Proxy) route(address string) (outbound Outbound) {
 			tag = r.Tag
 		}
 	}
-	return *proxy.Outbounds[tag]
+	return *proxy.outbounds[tag]
 }

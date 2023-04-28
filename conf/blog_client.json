@@ -20,8 +20,7 @@
   ],
   "routers": [
     {
-      "tag": "direct",
-      "rules": ["cn"]
+q      "rules": ["cn"]
     }
   ]
 }

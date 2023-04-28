@@ -13,10 +13,9 @@ type Request interface {
 
 type HTTPRequest struct {
 	Method  string
-	Url     string
+	url     string
 	Address string
 	Payload []byte
-	Rawdata []byte
 }
 
 func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
@@ -24,12 +23,12 @@ func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 		string(buffer[:bytes.IndexByte(buffer[:], '\n')]),
 		"%s%s",
 		&request.Method,
-		&request.Url,
+		&request.url,
 	)
 	if err != nil {
 		return
 	}
-	hostPortURL, err := url.Parse(request.Url)
+	hostPortURL, err := url.Parse(request.url)
 	if err != nil {
 		return
 	}
@@ -43,6 +42,5 @@ func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 	}
 
 	request.Payload = buffer[bytes.Index(buffer[:], []byte("\r\n\r\n")):]
-	request.Rawdata = buffer[:]
 	return request, nil
 }
