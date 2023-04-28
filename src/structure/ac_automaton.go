@@ -10,6 +10,18 @@ func NewTrie() *ACAutomaton {
 	return trie
 }
 
+// ACAutomaton /*
+/*
+Actually, the AC automaton is still not totally available,
+There are still obvious issues:
+1. When try to add reverse key word, then find with reversed key,
+it seems incorrect at all.
+2. Secondly, www.bing.com is identified when google rule is set
+The root cause of above issues could be horrible that there must
+be an unknown critical defect in our automaton. A comprehensive,
+thorough and exhaustive test MUST be done to examine the automaton.
+Of course, next time.
+*/
 type ACAutomaton struct {
 	success map[uint8]*ACAutomaton
 	failure *ACAutomaton

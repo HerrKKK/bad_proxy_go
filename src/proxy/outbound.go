@@ -26,7 +26,7 @@ type Outbound struct {
 	wsPath   string
 }
 
-func (outbound Outbound) Dial(targetAddr string, payload []byte) (out OutboundConnect, err error) {
+func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundConnect, err error) {
 	if outbound.protocol == "btp" {
 		// *BtpOutbound implemented OutboundConnect,
 		// here we return the pointer of BtpOutbound, which is an OutboundConnect
