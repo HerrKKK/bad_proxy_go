@@ -75,8 +75,7 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 		return errors.New("digest mismatch, unauthorized connect")
 	}
 
-	lru := GetBtpCache()
-	err = lru.Add(request.digest)
+	err = GetBtpCache().Add(request.digest)
 	if err != nil {
 		return err // possible replay attack
 	}
