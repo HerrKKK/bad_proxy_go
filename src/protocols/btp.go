@@ -55,6 +55,11 @@ func GetBtpCache() *structure.LRU[string] {
 }
 
 func (request *BTPRequest) Validate(secret string) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			err = errors.New("btp validation panic")
+		}
+	}()
 	if request.confusionLen < 0 || request.confusionLen > btpMaxConfusionLen {
 		return errors.New("unexpected confusion length")
 	}
@@ -81,27 +86,33 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 	return nil
 }
 
-func ParseBtpRequest(buffer []byte) (request *BTPRequest, err error) {
+func ParseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			request.Payload = rawdata // restore raw data
+			err = errors.New("btp parse panic")
+		}
+	}()
 	request = &BTPRequest{}
-	request.digest = hex.EncodeToString(buffer[:btpDigestLen])
-	request.confusionLen = int(buffer[btpDigestLen]) // uint8
+	request.digest = hex.EncodeToString(rawdata[:btpDigestLen])
+	request.confusionLen = int(rawdata[btpDigestLen]) // uint8
 
 	pos := btpDigestLen + btpConfusionLenDig + request.confusionLen
-	timestamp := binary.BigEndian.Uint32(buffer[pos : pos+btpTimestampLen])
+	timestamp := binary.BigEndian.Uint32(rawdata[pos : pos+btpTimestampLen])
 	request.timediff = int(time.Now().Unix()) - int(timestamp)
 
 	pos += btpTimestampLen + btpDirectiveDig
-	hostLen := int(buffer[pos])
+	hostLen := int(rawdata[pos])
 	pos += btpHostLenDig
-	host := string(buffer[pos : pos+hostLen])
+	host := string(rawdata[pos : pos+hostLen])
 	pos += hostLen // possible out of bound
-	port := strconv.Itoa(int(binary.BigEndian.Uint16(buffer[pos : pos+btpPortLen])))
+	port := strconv.Itoa(int(binary.BigEndian.Uint16(rawdata[pos : pos+btpPortLen])))
 	pos += btpPortLen
 
 	request.headerLen = pos - request.confusionLen - hostLen
 	request.Address = host + ":" + port
-	request.Payload = buffer[pos:]
-	request.rawdata = buffer
+	request.Payload = rawdata[pos:]
+	request.rawdata = rawdata
 	return request, nil
 }
 
