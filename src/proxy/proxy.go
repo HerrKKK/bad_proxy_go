@@ -98,7 +98,7 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	address, payload, err := in.Connect() // handshake
 	defer in.Close()
 	if err != nil {
-		log.Println("inbound connect failed, start fallback", err)
+		log.Println("inbound connect failed:", err)
 		in.Fallback(proxy.Fallback.LocalAddr, payload)
 		return
 	}
