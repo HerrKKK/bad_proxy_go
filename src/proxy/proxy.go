@@ -16,10 +16,11 @@ type Proxy struct {
 }
 
 type Config struct {
-	Inbounds  []InboundConfig  `json:"inbounds"`
-	Outbounds []OutboundConfig `json:"outbounds"`
-	Router    []router.Config  `json:"routers"`
-	Fallback  FallbackConfig   `json:"fallback"`
+	Inbounds   []InboundConfig  `json:"inbounds"`
+	Outbounds  []OutboundConfig `json:"outbounds"`
+	Router     []router.Config  `json:"routers"`
+	Fallback   FallbackConfig   `json:"fallback"`
+	RouterPath string
 }
 
 func NewProxy(config Config) (newProxy Proxy) {
@@ -31,7 +32,7 @@ func NewProxy(config Config) (newProxy Proxy) {
 		for _, rule := range r.Rules {
 			rules = append(rules, rule)
 		}
-		newRouter, err := router.NewRouter(r.Tag, rules)
+		newRouter, err := router.NewRouter(r.Tag, rules, config.RouterPath)
 		if err != nil {
 			log.Println("wrong router:", r.Tag)
 			continue
@@ -63,7 +64,7 @@ func NewProxy(config Config) (newProxy Proxy) {
 		}
 		_, exist := newProxy.Outbounds[out.Tag]
 		if exist == true {
-			log.Fatalln("duplicate tag")
+			log.Fatalln("duplicate outbound tag")
 		}
 		newProxy.Outbounds[out.Tag] = &newOutbound
 	}

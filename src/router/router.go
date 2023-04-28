@@ -64,9 +64,9 @@ func (router Router) MatchAny(key string) bool {
 	return false
 }
 
-func NewRouter(tag string, ruleNames []string) (router *Router, err error) {
+func NewRouter(tag string, ruleNames []string, routerPath string) (router *Router, err error) {
 	//allRules, err := readAllFromFile("rules")
-	allRules, err := readAllFromGob("conf/rules.dat")
+	allRules, err := readAllFromGob(routerPath)
 	if err != nil {
 		log.Println("failed to read rules from file", err)
 		return
