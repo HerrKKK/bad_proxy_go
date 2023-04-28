@@ -50,15 +50,6 @@ func (matcher RegexMatcher) MatchAny(key string) bool {
 	return false
 }
 
-func NewACAutomatonMatcher(domains []string) Matcher {
-	//var matcher Matcher
-	//var acMatcher structure.ACAutomaton
-	//acMatcher = *structure.NewACAutomaton(domains)
-	//matcher = &acMatcher
-	//return &matcher //!!!THIS DOES NOT WORK, GREAT OBSTACLE
-	return structure.NewACAutomaton(domains)
-}
-
 type Router struct {
 	Tag      string
 	matchers []Matcher
@@ -74,9 +65,10 @@ func (router Router) MatchAny(key string) bool {
 }
 
 func NewRouter(tag string, ruleNames []string) (router *Router, err error) {
-	allRules, err := readAllFromFile("rules")
+	//allRules, err := readAllFromFile("rules")
+	allRules, err := readAllFromGob("conf/rules.dat")
 	if err != nil {
-		log.Println("failed to read rules from file")
+		log.Println("failed to read rules from file", err)
 		return
 	}
 
@@ -109,6 +101,6 @@ func NewRouter(tag string, ruleNames []string) (router *Router, err error) {
 	)
 	router.matchers = append(router.matchers, NewFullMatcher(fullDomains))
 	router.matchers = append(router.matchers, NewRegexMatcher(RegexStrs))
-	router.matchers = append(router.matchers, NewACAutomatonMatcher(domains))
+	router.matchers = append(router.matchers, structure.NewACAutomaton(domains))
 	return
 }
