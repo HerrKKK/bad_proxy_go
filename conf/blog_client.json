@@ -6,12 +6,12 @@
   }],
   "outbounds": [
     {
-    "secret": "",
-    "host": "wwr.icu",
-    "port": "443",
-    "protocol": "btp",
-    "transmit": "wss",
-    "ws_path": "/bp"
+      "secret": "",
+      "host": "wwr.icu",
+      "port": "443",
+      "protocol": "btp",
+      "transmit": "wss",
+      "ws_path": "/bp"
     },
     {
       "tag": "direct",
@@ -20,7 +20,7 @@
   ],
   "routers": [
     {
-q      "rules": ["cn"]
+      "rules": ["cn"]
     }
   ]
 }
