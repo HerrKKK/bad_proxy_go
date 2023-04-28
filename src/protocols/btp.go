@@ -16,21 +16,23 @@ import (
 	"time"
 )
 
-const btpDigestLen = 32
-const btpConfusionLenDig = 1
-const btpTimestampLen = 4
-const btpDirectiveDig = 1
-const btpHostLenDig = 1
-const btpPortLen = 2
-const btpHeaderLen = btpDigestLen +
-	btpConfusionLenDig +
-	btpTimestampLen +
-	btpHostLenDig +
-	btpDirectiveDig +
-	btpPortLen
-const timeThreshold = 210
-const btpMaxConfusionLen = 64
-const btpTimeDiffRand = 30
+const (
+	btpDigestLen       = 32
+	btpConfusionLenDig = 1
+	btpTimestampLen    = 4
+	btpDirectiveDig    = 1
+	btpHostLenDig      = 1
+	btpPortLen         = 2
+	btpHeaderLen       = btpDigestLen +
+		btpConfusionLenDig +
+		btpTimestampLen +
+		btpHostLenDig +
+		btpDirectiveDig +
+		btpPortLen
+	timeThreshold      = 210
+	btpMaxConfusionLen = 64
+	btpTimeDiffRand    = 30
+)
 
 type BTPRequest struct {
 	Address      string

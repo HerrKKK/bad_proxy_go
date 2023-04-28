@@ -24,36 +24,36 @@ type InboundConfig struct {
 }
 
 type Inbound struct {
-	Listener    net.Listener
-	Secret      string
-	Protocol    string
-	Address     string
-	Transmit    transport.ProtocolType
-	WsPath      string
-	TlsCertPath string
-	TlsKeyPath  string
+	listener    net.Listener
+	secret      string
+	protocol    string
+	address     string
+	transmit    transport.ProtocolType
+	wsPath      string
+	tlsCertPath string
+	tlsKeyPath  string
 }
 
 func (inbound *Inbound) Listen() (err error) {
-	inbound.Listener, err = transport.Listen(
-		inbound.Address,
-		inbound.Transmit,
-		inbound.WsPath,
-		inbound.TlsCertPath,
-		inbound.TlsKeyPath,
+	inbound.listener, err = transport.Listen(
+		inbound.address,
+		inbound.transmit,
+		inbound.wsPath,
+		inbound.tlsCertPath,
+		inbound.tlsKeyPath,
 	)
 	return
 }
 
 func (inbound *Inbound) Accept() (inConn InboundConnect, err error) {
-	conn, err := inbound.Listener.Accept()
+	conn, err := inbound.listener.Accept()
 	if err != nil {
 		return
 	}
-	if inbound.Protocol == "http" {
+	if inbound.protocol == "http" {
 		inConn = HttpInbound{conn: conn}
-	} else if inbound.Protocol == "btp" {
-		inConn = BtpInbound{conn: conn, secret: inbound.Secret}
+	} else if inbound.protocol == "btp" {
+		inConn = BtpInbound{conn: conn, secret: inbound.secret}
 	}
 	return
 }
