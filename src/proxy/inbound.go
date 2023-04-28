@@ -51,9 +51,9 @@ func (inbound *Inbound) Accept() (inConn InboundConnect, err error) {
 		return
 	}
 	if inbound.protocol == "http" {
-		inConn = HttpInbound{conn: conn}
+		inConn = &HttpInbound{conn: conn}
 	} else if inbound.protocol == "btp" {
-		inConn = BtpInbound{conn: conn, secret: inbound.secret}
+		inConn = &BtpInbound{conn: conn, secret: inbound.secret}
 	}
 	return
 }
@@ -70,13 +70,13 @@ type HttpInbound struct {
 	conn net.Conn
 }
 
-func (inbound HttpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
+func (inbound *HttpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
 	_ = reverseLocalAddr
 	_ = rawdata
 	return
 }
 
-func (inbound HttpInbound) Connect() (targetAddr string, payload []byte, err error) {
+func (inbound *HttpInbound) Connect() (targetAddr string, payload []byte, err error) {
 	payload = make([]byte, 8196)
 	length, err := inbound.conn.Read(payload[:])
 	if err != nil {
@@ -103,15 +103,15 @@ func (inbound HttpInbound) Connect() (targetAddr string, payload []byte, err err
 	return
 }
 
-func (inbound HttpInbound) Read(b []byte) (int, error) {
+func (inbound *HttpInbound) Read(b []byte) (int, error) {
 	return inbound.conn.Read(b)
 }
 
-func (inbound HttpInbound) Write(b []byte) (int, error) {
+func (inbound *HttpInbound) Write(b []byte) (int, error) {
 	return inbound.conn.Write(b)
 }
 
-func (inbound HttpInbound) Close() error {
+func (inbound *HttpInbound) Close() error {
 	return inbound.conn.Close()
 }
 
@@ -120,7 +120,7 @@ type BtpInbound struct {
 	secret string
 }
 
-func (inbound BtpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
+func (inbound *BtpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
 	out, err := net.Dial("tcp", reverseLocalAddr)
 	defer inbound.Close()
 	defer out.Close()
@@ -134,7 +134,7 @@ func (inbound BtpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
 	return
 }
 
-func (inbound BtpInbound) Connect() (targetAddr string, payload []byte, err error) {
+func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err error) {
 	payload = make([]byte, 8196) // return rawdata on error
 	length, err := inbound.conn.Read(payload)
 	if err != nil {
@@ -151,14 +151,14 @@ func (inbound BtpInbound) Connect() (targetAddr string, payload []byte, err erro
 	return request.Address, request.Payload, nil
 }
 
-func (inbound BtpInbound) Read(b []byte) (int, error) {
+func (inbound *BtpInbound) Read(b []byte) (int, error) {
 	return inbound.conn.Read(b)
 }
 
-func (inbound BtpInbound) Write(b []byte) (int, error) {
+func (inbound *BtpInbound) Write(b []byte) (int, error) {
 	return inbound.conn.Write(b)
 }
 
-func (inbound BtpInbound) Close() error {
+func (inbound *BtpInbound) Close() error {
 	return inbound.conn.Close()
 }

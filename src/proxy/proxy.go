@@ -76,7 +76,7 @@ func (proxy Proxy) Start() {
 		go StartReverseProxy(proxy.fallback.LocalAddr, proxy.fallback.RemoteAddr)
 	}
 	for _, inbound := range proxy.inbounds {
-		go func(inbound Inbound) {
+		go func(inbound *Inbound) {
 			log.Println("listen on", inbound.address)
 			err := inbound.Listen()
 			if err != nil {
@@ -91,13 +91,12 @@ func (proxy Proxy) Start() {
 				}
 				go proxy.proxy(in)
 			}
-		}(inbound)
+		}(&inbound)
 	}
 }
 
 func (proxy Proxy) proxy(in InboundConnect) {
 	address, payload, err := in.Connect() // handshake
-	defer in.Close()
 	if err != nil {
 		log.Println("inbound connect failed:", err)
 		in.Fallback(proxy.fallback.LocalAddr, payload)
@@ -106,13 +105,14 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	// routing to find outbound template
 	outbound := proxy.route(address)
 	out, err := outbound.Dial(address, payload) // handshake
-	defer out.Close()
 	if err != nil {
 		log.Printf("outbound dial to %s failed\n", outbound.address)
 		return
 	}
 	go io.Copy(in, out)
 	_, _ = io.Copy(out, in)
+	_ = in.Close()
+	_ = out.Close()
 }
 
 func (proxy Proxy) route(address string) (outbound Outbound) {
@@ -123,6 +123,7 @@ func (proxy Proxy) route(address string) (outbound Outbound) {
 	for _, r := range proxy.routers {
 		if r.MatchAny(host) == true {
 			tag = r.Tag
+			break
 		}
 	}
 	return *proxy.outbounds[tag]
