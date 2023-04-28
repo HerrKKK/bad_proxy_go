@@ -2,6 +2,7 @@ package router
 
 import (
 	"bufio"
+	"encoding/gob"
 	"errors"
 	"log"
 	"os"
@@ -139,4 +140,32 @@ func parseList(list *List, listRef map[string]*List) (*ParsedList, error) {
 	pl.Entry = entryList
 
 	return pl, nil
+}
+
+func readAllFromGob(gobName string) (allRules map[string]*ParsedList, err error) {
+	file, err := os.Open(gobName)
+	if err != nil {
+		return
+	}
+	err = gob.NewDecoder(file).Decode(&allRules)
+	return
+}
+
+func WriteAllToGob(dir string, gobName string) (err error) {
+	pl, err := readAllFromFile(dir)
+	if err != nil {
+		return
+	}
+	if _, err := os.Stat(gobName); err == nil {
+		err = os.Remove(gobName)
+		if err != nil {
+			return err
+		}
+	}
+	file, err := os.Create(gobName)
+	if err != nil {
+		return
+	}
+	err = gob.NewEncoder(file).Encode(pl)
+	return
 }

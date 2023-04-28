@@ -21,6 +21,10 @@ func main() {
 		log.Println(err)
 		return
 	}
+	//err = router.WriteAllToGob("rules", "conf/rules.dat")
+	//if err != nil {
+	//	panic(err)
+	//}
 	mainProxy := proxy.NewProxy(config)
 	mainProxy.Start()
 	<-make(chan os.Signal)
