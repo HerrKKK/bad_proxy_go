@@ -1,4 +1,41 @@
 # Bad Proxy GO
 
-Bad proxy go is the 2.0 version of python bad proxy,
-support websocket and routing, bad proxy, GO!
+Bad proxy go is the 2.0 version of python bad proxy
+
+## Bad Proxy
+自用私有协议代理，使用Bad Transfer Protocol传输数据
+
+相比[Bad Proxy](https://github.com/HerrKKK/bad_proxy) 1.0的升级:
+1. 使用golang
+2. 传输层解耦，支持websocket
+3. 增加多个出入站支持多用户
+4. 增加AC自动机匹配路由
+
+## Bad Transfer Protocol
+
+| 32 Bytes | 1 Bytes | X Bytes            | 4 Bytes            | 1 Bytes | 1 Bytes | Y Bytes        | 2 Bytes | Z bytes |
+|----------|---------|--------------------|--------------------|---------|---------|----------------|---------|---------|
+| digest   | 混淆字段长度  | 混淆字段 (0 <= X < 64) | utc timestamp +-30 | 指令      | host长度  | host (Y < 254) | 端口号     | 数据载荷    |
+
+| 1 Bytes | X Bytes            | 16 Bytes |
+|---------|--------------------|----------|
+| 混淆字段长度  | 混淆字段 (32 <= X < 64 | 载荷数据     |
+
+BTP是简单无状态应用层协议, 主要参考vless实现, 主要区别如下
+1. 相比保留了vmess的时间验证和哈希认证: vmess是将时间和消息, 密钥一起摘要,
+服务器根据算出合法时间段内所有的哈希值进行比对, 有一个成功则合法,
+而我嫌麻烦则直接发送了utc时间戳; 哈希值用于认证和防止篡改,
+而时间戳校验可以防止长延迟的重放攻击, 据说gfw会把抓到的包保存好几天进行重放
+
+2. 协议首包直接发送数据, 这是跟Trojan学的, 可以避免包长度被探测,
+在此之上还加入了随机长度的混淆字段, 避免协议包头尤其是时间戳, 出现某些可能的特征
+
+### 安全性
+1. 加密
+和vless一样, BTP不提供加密, 采用tls进行传输, 未来会提供websocket传输
+2. 重放攻击
+长延迟重放由时间戳校验防御, 超时最多4分钟/240秒则包失效(210s超时, +-30秒随机)
+短延迟重放由lru防御, 每个合法连接的协议头摘要会被存到一个默认大小为240000的中lru,
+这样可以在1000qps的服务器上防御4分钟内的重放攻击(据说gfw会在一秒钟之内就开始重放)
+3. 主动探测
+使用golang自带的反向代理代理到其他http站点，检测到主动探测时将tcp流量原封不动转接到反向代理上
