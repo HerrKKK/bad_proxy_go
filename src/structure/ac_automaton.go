@@ -37,10 +37,8 @@ func (root *ACAutomaton) Add(value string) {
 			curr.success[ch] = NewTrie()
 		}
 		curr = curr.success[ch]
-		if i == len(value)-1 {
-			curr.emit = true
-		}
 	}
+	curr.emit = true
 }
 
 func NewACAutomaton(patterns []string) *ACAutomaton {
