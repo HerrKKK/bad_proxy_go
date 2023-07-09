@@ -1,4 +1,6 @@
 .idea
 .vscode
 pkg
+rules
 *.iml
+*.exe
