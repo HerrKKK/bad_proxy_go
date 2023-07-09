@@ -21,7 +21,7 @@ const (
 	The arguments are:
 		--help              show this help message
 		--version           show version message
-		--config            specify config file path, default conf/server.json
+		--config            specify config file path, default conf/config.json
 		--router-path       specify binary routing file path, default conf/rules.dat
 		--rule-path         specify text rule files path, default ./rules
 	`
@@ -62,7 +62,7 @@ func main() {
 
 func run() (err error) {
 	runCmd := flag.NewFlagSet("run", flag.ExitOnError)
-	configPath := runCmd.String("config", "conf/server_config.json", "config file path")
+	configPath := runCmd.String("config", "conf/config.json", "config file path")
 	routerPath := runCmd.String("router-path", "conf/rules.dat", "router data path")
 	err = runCmd.Parse(os.Args[2:])
 	if err != nil {
