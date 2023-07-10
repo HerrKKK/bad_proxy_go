@@ -9,7 +9,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"go_proxy/structure"
+	"io"
 	"math/big"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -158,4 +160,78 @@ func EncodeBtpRequest(address string, payload []byte, secret string) (res []byte
 	digest := h.Sum(nil)
 	res = append(digest, body...)
 	return
+}
+
+type BtpInbound struct {
+	Conn   net.Conn
+	Secret string
+}
+
+func (inbound *BtpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
+	out, err := net.Dial("tcp", reverseLocalAddr)
+	defer inbound.Close()
+	defer out.Close()
+	if err != nil {
+		return
+	}
+	_, _ = out.Write(rawdata)
+
+	go io.Copy(inbound, out)
+	_, _ = io.Copy(out, inbound)
+	return
+}
+
+func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err error) {
+	payload = make([]byte, 8196) // return rawdata on error
+	length, err := inbound.Conn.Read(payload)
+	if err != nil {
+		return
+	}
+	request, err := ParseBtpRequest(payload[:length])
+	if err != nil {
+		return
+	}
+	err = request.Validate(inbound.Secret)
+	if err != nil { // try to handle http connection
+		return
+	}
+	return request.Address, request.Payload, nil
+}
+
+func (inbound *BtpInbound) Read(b []byte) (int, error) {
+	return inbound.Conn.Read(b)
+}
+
+func (inbound *BtpInbound) Write(b []byte) (int, error) {
+	return inbound.Conn.Write(b)
+}
+
+func (inbound *BtpInbound) Close() error {
+	return inbound.Conn.Close()
+}
+
+type BtpOutbound struct {
+	Conn   net.Conn
+	Secret string
+}
+
+func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
+	payload, err = EncodeBtpRequest(targetAddr, payload, outbound.Secret)
+	if err != nil {
+		return
+	}
+	_, err = outbound.Conn.Write(payload)
+	return
+}
+
+func (outbound *BtpOutbound) Read(b []byte) (int, error) {
+	return outbound.Conn.Read(b)
+}
+
+func (outbound *BtpOutbound) Write(b []byte) (int, error) {
+	return outbound.Conn.Write(b)
+}
+
+func (outbound *BtpOutbound) Close() error {
+	return outbound.Conn.Close()
 }

@@ -40,7 +40,7 @@ func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundC
 			return nil, err
 		}
 		log.Println("btp connect to", outbound.address)
-		out = &BtpOutbound{conn: conn, secret: outbound.secret}
+		out = &protocols.BtpOutbound{Conn: conn, Secret: outbound.secret}
 	} else {
 		var conn, err = transport.Dial(
 			targetAddr,
@@ -51,7 +51,7 @@ func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundC
 			return nil, err
 		}
 		log.Println("free connect to", targetAddr)
-		out = &FreeOutbound{conn: conn}
+		out = &protocols.FreeOutbound{Conn: conn}
 	}
 	err = out.Connect(targetAddr, payload)
 	return
@@ -66,54 +66,4 @@ type OutboundConnect interface {
 
 type FreeOutbound struct {
 	conn net.Conn
-}
-
-func (outbound *FreeOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	_ = targetAddr
-	_, err = outbound.conn.Write(payload)
-	return
-}
-
-func (outbound *FreeOutbound) Read(b []byte) (int, error) {
-	return outbound.conn.Read(b)
-}
-
-func (outbound *FreeOutbound) Write(b []byte) (int, error) {
-	return outbound.conn.Write(b)
-}
-
-func (outbound *FreeOutbound) Close() error {
-	if outbound.conn == nil {
-		return nil
-	}
-	return outbound.conn.Close()
-}
-
-type BtpOutbound struct {
-	conn   net.Conn
-	secret string
-}
-
-func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	payload, err = protocols.EncodeBtpRequest(targetAddr, payload, outbound.secret)
-	if err != nil {
-		return
-	}
-	_, err = outbound.conn.Write(payload)
-	return
-}
-
-func (outbound *BtpOutbound) Read(b []byte) (int, error) {
-	return outbound.conn.Read(b)
-}
-
-func (outbound *BtpOutbound) Write(b []byte) (int, error) {
-	return outbound.conn.Write(b)
-}
-
-func (outbound *BtpOutbound) Close() error {
-	if outbound.conn == nil {
-		return nil
-	}
-	return outbound.conn.Close()
 }

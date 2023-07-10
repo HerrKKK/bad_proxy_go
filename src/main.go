@@ -17,7 +17,7 @@ const (
 	The commands are:
 		run                 start proxy according to config file
 		build               build routing file from text files under rule-path to binary specified by router-path
-	
+
 	The arguments are:
 		--help              show this help message
 		--version           show version message
