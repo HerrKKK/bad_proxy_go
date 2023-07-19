@@ -4,7 +4,6 @@ import (
 	"go_proxy/protocols"
 	"go_proxy/transport"
 	"log"
-	"net"
 )
 
 type OutboundConfig struct {
@@ -27,10 +26,11 @@ type Outbound struct {
 }
 
 func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundConnect, err error) {
-	if outbound.protocol == "btp" {
-		// *BtpOutbound implemented OutboundConnect,
-		// here we return the pointer of BtpOutbound, which is an OutboundConnect
-		// simply, *BtpOutbound is OutboundConnect
+	switch outbound.protocol {
+	// *BtpOutbound implemented OutboundConnect,
+	// here we return the pointer of BtpOutbound, which is an OutboundConnect
+	// simply, *BtpOutbound is OutboundConnect
+	case "btp":
 		var conn, err = transport.Dial(
 			outbound.address,
 			outbound.transmit,
@@ -41,7 +41,14 @@ func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundC
 		}
 		log.Println("btp connect to", outbound.address)
 		out = &protocols.BtpOutbound{Conn: conn, Secret: outbound.secret}
-	} else {
+	case "sock":
+		var conn, err = transport.Dial(outbound.address, transport.TCP, "")
+		if err != nil {
+			return nil, err
+		}
+		log.Println("sock connect to", outbound.address)
+		out = &protocols.SockS5Outbound{Conn: conn}
+	default: // free
 		var conn, err = transport.Dial(
 			targetAddr,
 			outbound.transmit,
@@ -62,8 +69,4 @@ type OutboundConnect interface {
 	Read(b []byte) (int, error)
 	Write(b []byte) (int, error)
 	Close() error
-}
-
-type FreeOutbound struct {
-	conn net.Conn
 }

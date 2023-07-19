@@ -77,6 +77,9 @@ func NewRouter(tag string, ruleNames []string, routerPath string) (router *Route
 	RegexStrs := make([]string, 0)
 	for _, ruleName := range ruleNames {
 		ruleList, _ := allRules[strings.ToUpper(ruleName)]
+		if ruleList == nil {
+			continue
+		}
 		for _, entry := range ruleList.Entry {
 			switch entry.Type {
 			case "full":

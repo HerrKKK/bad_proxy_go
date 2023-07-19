@@ -1,0 +1,30 @@
+{
+  "inbounds": [{
+    "host": "0.0.0.0",
+    "port": "8083",
+    "protocol": "http"
+  }],
+  "outbounds": [
+    {
+      "host": "localhost",
+      "port": "10808",
+      "protocol": "sock",
+      "transmit": "tcp"
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    }
+  ],
+  "routers": [
+    {
+      "tag": "direct",
+      "rules": [
+        "www.ipaddress.my",
+        "wwr.icu",
+        "ifconfig.me",
+        "cn"
+      ]
+    }
+  ]
+}

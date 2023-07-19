@@ -80,7 +80,8 @@ func (proxy Proxy) Start() {
 			log.Println("listen on", inbound.address)
 			err := inbound.Listen()
 			if err != nil {
-				log.Fatalf("inbound on %s dead!\n", inbound.address)
+				log.Fatalf("inbound on %s dead, err is %s\n",
+					inbound.address, err.Error())
 				return
 			}
 			for {
