@@ -9,6 +9,33 @@ import (
 	"strings"
 )
 
+const (
+	VERSION = 0x05
+
+	METHOD_NO_AUTH   = 0x00
+	METHOD_GSSAPI    = 0x01
+	METHOD_USR_PWD   = 0x02
+	METHOD_NO_METHOD = 0xFF
+
+	CMD_CONNECT       = 0x01
+	CMD_BIND          = 0x02
+	CMD_UDP_ASSOCIATE = 0x03
+
+	ATYP_IPV4       = 0x01
+	ATYP_DOMAINNAME = 0x03
+	ATYP_IPV6       = 0x04
+
+	REP_SUCCESS             = 0x00
+	REP_FAILURE             = 0x01
+	REP_NOT_ALLOWED         = 0x02
+	REP_NETWORK_UNREACHABLE = 0x03
+	REP_HOST_UNREACHABLE    = 0x04
+	REP_CONNECTION_REFUSED  = 0x05
+	REP_TTL_EXPIRED         = 0x06
+	REP_CMD_UNSUPPORTED     = 0x07
+	REP_ATYP_UNSUPPORTED    = 0x08
+)
+
 type SockS5Package struct {
 	version     uint8
 	command     uint8 // REP in response
@@ -42,22 +69,25 @@ func (sock *SockS5Package) Print() {
 }
 
 func encodeSockS5Request(targetAddr string) (request SockS5Package) {
-	request.version = 0x05
-	request.command = 0x01
+	request.version = VERSION
+	request.command = CMD_CONNECT
 	hnp := strings.Split(targetAddr, ":")
 	request.host = hnp[0]
 	request.port, _ = strconv.Atoi(hnp[1])
 
-	request.addressType = 0x03 // domain name
-	if net.ParseIP(request.host) != nil {
-		request.addressType = 0x01 // ipv4, v6 not supported
+	ip := net.ParseIP(request.host)
+	if ip == nil {
+		request.addressType = ATYP_DOMAINNAME // domain name
+	} else if strings.Contains(ip.String(), ":") {
+		request.addressType = ATYP_IPV6 // ipv4
+	} else {
+		request.addressType = ATYP_IPV4 // ipv6
 	}
 	return
 }
 
 func parseSockS5Response(data []byte, length int) (response SockS5Package) {
 	if length < 8 {
-		log.Printf("socks response length is %d\n", length)
 		return
 	}
 	response.version = data[0]
@@ -76,33 +106,28 @@ type SockS5Outbound struct {
 }
 
 func (outbound *SockS5Outbound) Connect(targetAddr string, payload []byte) (err error) {
-	// socks5 version, length of methods, methods: only no encrypted
-	buffer := []byte{0x05, 0x01, 0x00}
+	// socks5 version, length of methods, methods: no-auth only
+	buffer := []byte{VERSION, 0x01, METHOD_NO_AUTH}
 	_, err = outbound.Conn.Write(buffer)
 	if err != nil {
 		return
 	}
 	buffer = make([]byte, 1024)
-	_, err = outbound.Conn.Read(buffer)  // the chosen encryption
-	if err != nil || buffer[2] != 0x00 { // only no encryption supported
+	_, err = outbound.Conn.Read(buffer)            // the chosen encryption
+	if err != nil || buffer[2] != METHOD_NO_AUTH { // only no encryption supported
 		return
 	}
 
 	request := encodeSockS5Request(targetAddr)
-	log.Println(request.toByteArray())
-	_, err = outbound.Conn.Write(request.toByteArray())
-	if err != nil {
-		log.Printf("failed to write for %s\n", err.Error())
+	if _, err = outbound.Conn.Write(request.toByteArray()); err != nil {
 		return
 	}
 
 	buffer = make([]byte, 1024)
-	log.Printf("before read")
 	length, err := outbound.Conn.Read(buffer) // read response
-	log.Printf("after read")
 	response := parseSockS5Response(buffer, length)
-	if response.command != 0x00 {
-		log.Printf("response failed %d\n", response.command)
+	if response.command != REP_SUCCESS {
+		return
 	}
 
 	if len(payload) != 0 {

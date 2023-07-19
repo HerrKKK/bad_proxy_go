@@ -58,7 +58,7 @@ func GetBtpCache() *structure.LRU[string] {
 	return btpLRU
 }
 
-func (request *BTPRequest) Validate(secret string) (err error) {
+func (request *BTPRequest) validate(secret string) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New("btp validation panic")
@@ -89,7 +89,7 @@ func (request *BTPRequest) Validate(secret string) (err error) {
 	return nil
 }
 
-func ParseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
+func parseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			request.Payload = rawdata // restore raw data
@@ -119,7 +119,7 @@ func ParseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
 	return request, nil
 }
 
-func EncodeBtpRequest(address string, payload []byte, secret string) (res []byte, err error) {
+func encodeBtpRequest(address string, payload []byte, secret string) (res []byte, err error) {
 	bytesBuffer := bytes.NewBuffer([]byte{})
 	confusionLen, err := rand.Int(rand.Reader, big.NewInt(btpMaxConfusionLen))
 	if err != nil {
@@ -187,11 +187,11 @@ func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err err
 	if err != nil {
 		return
 	}
-	request, err := ParseBtpRequest(payload[:length])
+	request, err := parseBtpRequest(payload[:length])
 	if err != nil {
 		return
 	}
-	err = request.Validate(inbound.Secret)
+	err = request.validate(inbound.Secret)
 	if err != nil { // try to handle http connection
 		return
 	}
@@ -216,7 +216,7 @@ type BtpOutbound struct {
 }
 
 func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	payload, err = EncodeBtpRequest(targetAddr, payload, outbound.Secret)
+	payload, err = encodeBtpRequest(targetAddr, payload, outbound.Secret)
 	if err != nil {
 		return
 	}
