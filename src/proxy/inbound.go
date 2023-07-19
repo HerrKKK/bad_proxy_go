@@ -4,6 +4,8 @@ import (
 	"go_proxy/protocols"
 	"go_proxy/transport"
 	"net"
+	"strconv"
+	"strings"
 )
 
 type FallbackConfig struct {
@@ -49,10 +51,20 @@ func (inbound *Inbound) Accept() (inConn InboundConnect, err error) {
 	if err != nil {
 		return
 	}
-	if inbound.protocol == "http" {
+
+	switch inbound.protocol {
+	case "http":
 		inConn = &protocols.HttpInbound{Conn: conn}
-	} else if inbound.protocol == "btp" {
+	case "btp":
 		inConn = &protocols.BtpInbound{Conn: conn, Secret: inbound.secret}
+	case "socks":
+		hnp := strings.Split(inbound.address, ":")
+		port, _ := strconv.Atoi(hnp[1])
+		inConn = &protocols.Socks5Inbound{
+			Conn: conn,
+			Host: hnp[0],
+			Port: port,
+		}
 	}
 	return
 }

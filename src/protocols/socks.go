@@ -3,6 +3,7 @@ package protocols
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"log"
 	"net"
 	"strconv"
@@ -12,28 +13,18 @@ import (
 const (
 	VERSION = 0x05
 
-	METHOD_NO_AUTH   = 0x00
-	METHOD_GSSAPI    = 0x01
-	METHOD_USR_PWD   = 0x02
-	METHOD_NO_METHOD = 0xFF
+	MethodNoAuth = 0x00
 
-	CMD_CONNECT       = 0x01
-	CMD_BIND          = 0x02
-	CMD_UDP_ASSOCIATE = 0x03
+	CmdConnect = 0x01
 
-	ATYP_IPV4       = 0x01
-	ATYP_DOMAINNAME = 0x03
-	ATYP_IPV6       = 0x04
+	AtypIpv4       = 0x01
+	AtypDomainname = 0x03
+	AtypIpv6       = 0x04
 
-	REP_SUCCESS             = 0x00
-	REP_FAILURE             = 0x01
-	REP_NOT_ALLOWED         = 0x02
-	REP_NETWORK_UNREACHABLE = 0x03
-	REP_HOST_UNREACHABLE    = 0x04
-	REP_CONNECTION_REFUSED  = 0x05
-	REP_TTL_EXPIRED         = 0x06
-	REP_CMD_UNSUPPORTED     = 0x07
-	REP_ATYP_UNSUPPORTED    = 0x08
+	RepSuccess = 0x00
+
+	Ipv4Length = 4
+	Ipv6Length = 16
 )
 
 type Socks5Message struct {
@@ -52,7 +43,7 @@ func (socks *Socks5Message) toByteArray() []byte {
 	_ = binary.Write(bytesBuffer, binary.BigEndian, socks.command)
 	_ = binary.Write(bytesBuffer, binary.BigEndian, socks.rsv)
 	_ = binary.Write(bytesBuffer, binary.BigEndian, socks.addressType)
-	if socks.addressType == ATYP_DOMAINNAME {
+	if socks.addressType == AtypDomainname {
 		_ = binary.Write(bytesBuffer, binary.BigEndian, uint8(len([]byte(socks.host))))
 	}
 	_ = binary.Write(bytesBuffer, binary.BigEndian, []byte(socks.host))
@@ -70,32 +61,53 @@ func (socks *Socks5Message) Print() {
 
 func encodeSockS5Request(targetAddr string) (request Socks5Message) {
 	request.version = VERSION
-	request.command = CMD_CONNECT
+	request.command = CmdConnect
 	hnp := strings.Split(targetAddr, ":")
 	request.host = hnp[0]
 	request.port, _ = strconv.Atoi(hnp[1])
 
 	ip := net.ParseIP(request.host)
 	if ip == nil {
-		request.addressType = ATYP_DOMAINNAME // domain name
+		request.addressType = AtypDomainname // domain name
 	} else if strings.Contains(ip.String(), ":") {
-		request.addressType = ATYP_IPV6 // ipv4
+		request.addressType = AtypIpv6 // ipv4
 	} else {
-		request.addressType = ATYP_IPV4 // ipv6
+		request.addressType = AtypIpv4 // ipv6
 	}
 	return
 }
 
-func parseSockS5Response(data []byte, length int) (response Socks5Message) {
-	if length < 8 {
+func parseSockS5Message(data []byte) (response Socks5Message, err error) {
+	if len(data) < 4 {
+		err = errors.New("too short message")
 		return
 	}
 	response.version = data[0]
 	response.command = data[1]
 	response.rsv = data[2]
 	response.addressType = data[3]
-	response.host = string(data[4 : length-2])
-	response.port = int(binary.BigEndian.Uint32(data[length-2:]))
+	pos := 4
+	switch response.addressType {
+	case AtypIpv4: // curl --socks5-hostname
+		response.host = string(data[pos : pos+Ipv4Length])
+		pos += Ipv4Length
+	case AtypDomainname:
+		domainLength := int(data[pos])
+		pos++
+		if pos+domainLength > len(data)-2 {
+			err = errors.New("failed to parse domain")
+			return
+		}
+		response.host = string(data[pos : pos+domainLength])
+		pos += domainLength
+	case AtypIpv6:
+		response.host = string(data[pos : pos+Ipv6Length])
+		pos += Ipv6Length
+	default:
+		err = errors.New("wrong address type")
+		return
+	}
+	response.port = int(data[pos])<<8 + int(data[pos+1])
 	return
 }
 
@@ -107,13 +119,13 @@ type Socks5Outbound struct {
 
 func (outbound *Socks5Outbound) Connect(targetAddr string, payload []byte) (err error) {
 	// socks5 version, length of methods, methods: no-auth only
-	buffer := []byte{VERSION, 0x01, METHOD_NO_AUTH}
+	buffer := []byte{VERSION, 0x01, MethodNoAuth}
 	if _, err = outbound.Conn.Write(buffer); err != nil {
 		return
 	}
 	buffer = make([]byte, 1024)
-	_, err = outbound.Conn.Read(buffer)            // the chosen encryption
-	if err != nil || buffer[2] != METHOD_NO_AUTH { // only no encryption supported
+	_, err = outbound.Conn.Read(buffer)          // the chosen encryption
+	if err != nil || buffer[2] != MethodNoAuth { // only no encryption supported
 		return
 	}
 
@@ -123,15 +135,15 @@ func (outbound *Socks5Outbound) Connect(targetAddr string, payload []byte) (err 
 	}
 
 	buffer = make([]byte, 1024)
-	length, err := outbound.Conn.Read(buffer) // read response
-	response := parseSockS5Response(buffer, length)
-	if response.command != REP_SUCCESS {
+	if _, err = outbound.Conn.Read(buffer); err != nil {
+		return
+	}
+	response, err := parseSockS5Message(buffer)
+	if err != nil || response.command != RepSuccess {
 		return
 	}
 
-	if len(payload) != 0 {
-		_, err = outbound.Conn.Write(payload)
-	}
+	_, err = outbound.Conn.Write(payload)
 	return
 }
 
@@ -145,4 +157,80 @@ func (outbound *Socks5Outbound) Write(b []byte) (int, error) {
 
 func (outbound *Socks5Outbound) Close() error {
 	return outbound.Conn.Close()
+}
+
+type Socks5Inbound struct {
+	Conn     net.Conn
+	Host     string
+	Port     int
+	username string
+	password string
+}
+
+func (inbound *Socks5Inbound) Connect() (targetAddr string, payload []byte, err error) {
+	payload = make([]byte, 1024) // return rawdata on error
+	if _, err = inbound.Conn.Read(payload); err != nil {
+		return
+	}
+
+	if payload[0] != VERSION {
+		log.Println("wrong socks version")
+		return
+	}
+
+	if _, err = inbound.Conn.Write([]byte{VERSION, MethodNoAuth}); err != nil {
+		return
+	}
+
+	payload = make([]byte, 1024)
+	if _, err = inbound.Conn.Read(payload); err != nil {
+		return
+	}
+
+	request, err := parseSockS5Message(payload)
+	if err != nil || request.command != CmdConnect {
+		return // only CMD_CONNECTION is supported now
+	}
+
+	response := Socks5Message{
+		version:     VERSION,
+		command:     RepSuccess,
+		rsv:         0x00,
+		addressType: AtypIpv4, // just bind to 0.0.0.0
+		host:        string([]byte{0x00, 0x00, 0x00, 0x00}),
+		port:        inbound.Port,
+	} // BND.ADDR/BND.PORT: the real relay server address
+
+	/*
+		Response should be sent after tcp connected according to socks5 protocol
+		while we just tell the client we succeeded and receive the first message
+		because we relay data to outbound instead of a tcp connection.
+	*/
+	if _, err = inbound.Conn.Write(response.toByteArray()); err != nil {
+		return
+	}
+
+	payload = make([]byte, 8196)
+	if _, err = inbound.Conn.Read(payload); err != nil {
+		return
+	}
+
+	return request.host + ":" + strconv.Itoa(request.port), payload, err
+}
+
+func (inbound *Socks5Inbound) Fallback(reverseLocalAddr string, rawdata []byte) {
+	_ = reverseLocalAddr
+	_ = rawdata
+}
+
+func (inbound *Socks5Inbound) Read(b []byte) (int, error) {
+	return inbound.Conn.Read(b)
+}
+
+func (inbound *Socks5Inbound) Write(b []byte) (int, error) {
+	return inbound.Conn.Write(b)
+}
+
+func (inbound *Socks5Inbound) Close() error {
+	return inbound.Conn.Close()
 }
