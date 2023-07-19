@@ -1,3 +1,14 @@
+/*
+A basic support for simple socks5 protocol
+limitations:
+	1. Only support version 5
+	2. Only support no-auth
+	3. The BND.ADDR and BND.PORT is fixed to ipv4 0.0.0.0:0
+	4. The server time sequence is actually compromised,
+       we reply the socks5 response before building connections
+	5. UDP unsupported
+*/
+
 package protocols
 
 import (
@@ -161,8 +172,6 @@ func (outbound *Socks5Outbound) Close() error {
 
 type Socks5Inbound struct {
 	Conn     net.Conn
-	Host     string
-	Port     int
 	username string
 	password string
 }
@@ -198,7 +207,7 @@ func (inbound *Socks5Inbound) Connect() (targetAddr string, payload []byte, err 
 		rsv:         0x00,
 		addressType: AtypIpv4, // just bind to 0.0.0.0
 		host:        string([]byte{0x00, 0x00, 0x00, 0x00}),
-		port:        inbound.Port,
+		port:        0x00,
 	} // BND.ADDR/BND.PORT: the real relay server address
 
 	/*
