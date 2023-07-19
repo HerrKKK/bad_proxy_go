@@ -41,13 +41,13 @@ func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundC
 		}
 		log.Println("btp connect to", outbound.address)
 		out = &protocols.BtpOutbound{Conn: conn, Secret: outbound.secret}
-	case "sock":
+	case "socks":
 		var conn, err = transport.Dial(outbound.address, transport.TCP, "")
 		if err != nil {
 			return nil, err
 		}
-		log.Println("sock connect to", outbound.address)
-		out = &protocols.SockS5Outbound{Conn: conn}
+		log.Println("socks connect to", outbound.address)
+		out = &protocols.Socks5Outbound{Conn: conn}
 	default: // free
 		var conn, err = transport.Dial(
 			targetAddr,

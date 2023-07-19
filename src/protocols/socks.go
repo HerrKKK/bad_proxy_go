@@ -36,7 +36,7 @@ const (
 	REP_ATYP_UNSUPPORTED    = 0x08
 )
 
-type SockS5Package struct {
+type Socks5Message struct {
 	version     uint8
 	command     uint8 // REP in response
 	rsv         uint8
@@ -45,30 +45,30 @@ type SockS5Package struct {
 	port        int
 }
 
-func (sock *SockS5Package) toByteArray() []byte {
+func (socks *Socks5Message) toByteArray() []byte {
 	bytesBuffer := bytes.NewBuffer([]byte{})
-	_ = binary.Write(bytesBuffer, binary.BigEndian, sock.version) // socks5
+	_ = binary.Write(bytesBuffer, binary.BigEndian, socks.version) // socks5
 	// 0x01: CONNECT with tcp, 0x02: BIND, waiting for, 0x03: UDP ASSOCIATE
-	_ = binary.Write(bytesBuffer, binary.BigEndian, sock.command)
-	_ = binary.Write(bytesBuffer, binary.BigEndian, sock.rsv)
-	_ = binary.Write(bytesBuffer, binary.BigEndian, sock.addressType)
-	if sock.addressType == 0x03 { // write a byte to represent length of host
-		_ = binary.Write(bytesBuffer, binary.BigEndian, uint8(len([]byte(sock.host))))
+	_ = binary.Write(bytesBuffer, binary.BigEndian, socks.command)
+	_ = binary.Write(bytesBuffer, binary.BigEndian, socks.rsv)
+	_ = binary.Write(bytesBuffer, binary.BigEndian, socks.addressType)
+	if socks.addressType == ATYP_DOMAINNAME {
+		_ = binary.Write(bytesBuffer, binary.BigEndian, uint8(len([]byte(socks.host))))
 	}
-	_ = binary.Write(bytesBuffer, binary.BigEndian, []byte(sock.host))
-	_ = binary.Write(bytesBuffer, binary.BigEndian, uint16(sock.port))
+	_ = binary.Write(bytesBuffer, binary.BigEndian, []byte(socks.host))
+	_ = binary.Write(bytesBuffer, binary.BigEndian, uint16(socks.port))
 	return bytesBuffer.Bytes()
 }
 
-func (sock *SockS5Package) Print() {
-	log.Printf("version: %d\n", sock.version)
-	log.Printf("command: %d\n", sock.command)
-	log.Printf("addressType: %d\n", sock.addressType)
-	log.Printf("host: %s\n", sock.host)
-	log.Printf("port: %d\n", sock.port)
+func (socks *Socks5Message) Print() {
+	log.Printf("version: %d\n", socks.version)
+	log.Printf("command: %d\n", socks.command)
+	log.Printf("addressType: %d\n", socks.addressType)
+	log.Printf("host: %s\n", socks.host)
+	log.Printf("port: %d\n", socks.port)
 }
 
-func encodeSockS5Request(targetAddr string) (request SockS5Package) {
+func encodeSockS5Request(targetAddr string) (request Socks5Message) {
 	request.version = VERSION
 	request.command = CMD_CONNECT
 	hnp := strings.Split(targetAddr, ":")
@@ -86,7 +86,7 @@ func encodeSockS5Request(targetAddr string) (request SockS5Package) {
 	return
 }
 
-func parseSockS5Response(data []byte, length int) (response SockS5Package) {
+func parseSockS5Response(data []byte, length int) (response Socks5Message) {
 	if length < 8 {
 		return
 	}
@@ -99,17 +99,16 @@ func parseSockS5Response(data []byte, length int) (response SockS5Package) {
 	return
 }
 
-type SockS5Outbound struct {
+type Socks5Outbound struct {
 	Conn     net.Conn
 	username string
 	password string
 }
 
-func (outbound *SockS5Outbound) Connect(targetAddr string, payload []byte) (err error) {
+func (outbound *Socks5Outbound) Connect(targetAddr string, payload []byte) (err error) {
 	// socks5 version, length of methods, methods: no-auth only
 	buffer := []byte{VERSION, 0x01, METHOD_NO_AUTH}
-	_, err = outbound.Conn.Write(buffer)
-	if err != nil {
+	if _, err = outbound.Conn.Write(buffer); err != nil {
 		return
 	}
 	buffer = make([]byte, 1024)
@@ -136,14 +135,14 @@ func (outbound *SockS5Outbound) Connect(targetAddr string, payload []byte) (err 
 	return
 }
 
-func (outbound *SockS5Outbound) Read(b []byte) (int, error) {
+func (outbound *Socks5Outbound) Read(b []byte) (int, error) {
 	return outbound.Conn.Read(b)
 }
 
-func (outbound *SockS5Outbound) Write(b []byte) (int, error) {
+func (outbound *Socks5Outbound) Write(b []byte) (int, error) {
 	return outbound.Conn.Write(b)
 }
 
-func (outbound *SockS5Outbound) Close() error {
+func (outbound *Socks5Outbound) Close() error {
 	return outbound.Conn.Close()
 }
