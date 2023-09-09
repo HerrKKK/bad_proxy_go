@@ -30,14 +30,14 @@ func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 		return
 	}
 	hostPortURL, err := url.Parse(request.url)
-	if err != nil {
-		return
-	}
-	if len(hostPortURL.Host) == 0 {
+	if err != nil { // Just believe url is an ip when parsing failed, leave err behind.
+		request.Address = request.url
+	} else if len(hostPortURL.Host) == 0 { // for opaque urls.
 		request.Address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
-	} else {
+	} else { // url parsed successfully.
 		request.Address = hostPortURL.Host
 	}
+
 	if strings.Index(request.Address, ":") == -1 {
 		request.Address = request.Address + ":80"
 	}
