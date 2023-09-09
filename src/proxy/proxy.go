@@ -76,12 +76,11 @@ func (proxy Proxy) Start() {
 		go StartReverseProxy(proxy.fallback.LocalAddr, proxy.fallback.RemoteAddr)
 	}
 	for _, inbound := range proxy.inbounds {
-		go func(inbound *Inbound) {
-			log.Println("listen on", inbound.address)
+		go func(inbound Inbound) { // TODO: Why reference pass does not work.
+			log.Println(inbound.protocol, "listen on", inbound.address)
 			err := inbound.Listen()
 			if err != nil {
-				log.Fatalf("inbound on %s dead, err is %s\n",
-					inbound.address, err.Error())
+				log.Fatalf("inbound on %s dead, %s\n", inbound.address, err.Error())
 				return
 			}
 			for {
@@ -92,11 +91,17 @@ func (proxy Proxy) Start() {
 				}
 				go proxy.proxy(in)
 			}
-		}(&inbound)
+		}(inbound)
 	}
 }
 
 func (proxy Proxy) proxy(in InboundConnect) {
+	defer func() { // recover any panic to avoid quiting from main loop.
+		if r := recover(); r != nil {
+			log.Println(r)
+		}
+	}()
+
 	address, payload, err := in.Connect() // handshake
 	if err != nil {
 		log.Println("inbound connect failed:", err)

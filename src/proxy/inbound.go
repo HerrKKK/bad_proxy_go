@@ -3,6 +3,7 @@ package proxy
 import (
 	"go_proxy/protocols"
 	"go_proxy/transport"
+	"log"
 	"net"
 )
 
@@ -45,6 +46,12 @@ func (inbound *Inbound) Listen() (err error) {
 }
 
 func (inbound *Inbound) Accept() (inConn InboundConnect, err error) {
+	defer func() { // recover any panic to avoid quiting from main loop.
+		if r := recover(); r != nil {
+			log.Println(r)
+		}
+	}()
+
 	conn, err := inbound.listener.Accept()
 	if err != nil {
 		return
