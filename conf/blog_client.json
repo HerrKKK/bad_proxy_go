@@ -1,0 +1,38 @@
+{
+  "inbounds": [
+    {
+      "host": "0.0.0.0",
+      "port": "8080",
+      "protocol": "http"
+    },
+    {
+      "host": "0.0.0.0",
+      "port": "8081",
+      "protocol": "socks"
+    }
+  ],
+  "outbounds": [
+    {
+      "secret": "uuid",
+      "host": "domain",
+      "port": "port",
+      "protocol": "btp",
+      "transmit": "wss",
+      "ws_path": "/path"
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    }
+  ],
+  "routers": [
+    {
+      "tag": "direct",
+      "rules": [
+        "domain:github.com",
+        "full:www.github.com",
+        "rule:cn"
+      ]
+    }
+  ]
+}
