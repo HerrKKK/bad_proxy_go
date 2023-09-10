@@ -62,14 +62,6 @@ func (socks *Socks5Message) toByteArray() []byte {
 	return bytesBuffer.Bytes()
 }
 
-func (socks *Socks5Message) Print() {
-	log.Printf("version: %d\n", socks.version)
-	log.Printf("command: %d\n", socks.command)
-	log.Printf("addressType: %d\n", socks.addressType)
-	log.Printf("host: %s\n", socks.host)
-	log.Printf("port: %d\n", socks.port)
-}
-
 func encodeSockS5Request(targetAddr string) (request Socks5Message) {
 	request.version = VERSION
 	request.command = CmdConnect
@@ -99,10 +91,10 @@ func parseSockS5Message(data []byte) (response Socks5Message, err error) {
 	response.addressType = data[3]
 	pos := 4
 	switch response.addressType {
-	case AtypIpv4: // curl --socks5-hostname
-		response.host = string(data[pos : pos+Ipv4Length])
+	case AtypIpv4: // // curl -x socks5://<proxy addr>:<port> <schema>://<host> -I
+		response.host = net.IP(data[pos : pos+Ipv4Length]).String()
 		pos += Ipv4Length
-	case AtypDomainname:
+	case AtypDomainname: // curl -x socks5h://<proxy addr>:<port> <schema>://<host> -I
 		domainLength := int(data[pos])
 		pos++
 		if pos+domainLength > len(data)-2 {
@@ -112,7 +104,7 @@ func parseSockS5Message(data []byte) (response Socks5Message, err error) {
 		response.host = string(data[pos : pos+domainLength])
 		pos += domainLength
 	case AtypIpv6:
-		response.host = string(data[pos : pos+Ipv6Length])
+		response.host = net.IP(data[pos : pos+Ipv6Length]).String()
 		pos += Ipv6Length
 	default:
 		err = errors.New("wrong address type")
