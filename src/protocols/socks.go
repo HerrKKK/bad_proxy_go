@@ -214,17 +214,13 @@ func (inbound *Socks5Inbound) Connect() (targetAddr string, payload []byte, err 
 		Response should be sent after tcp connected according to socks5 protocol
 		while we just tell the client we succeeded and receive the first message
 		because we relay data to outbound instead of a tcp connection.
+		TODO: The first message makes a glitch on btp side, but why?
 	*/
 	if _, err = inbound.Conn.Write(response.toByteArray()); err != nil {
 		return
 	}
 
-	payload = make([]byte, 8196)
-	if _, err = inbound.Conn.Read(payload); err != nil {
-		return
-	}
-
-	return request.host + ":" + strconv.Itoa(request.port), payload, err
+	return request.host + ":" + strconv.Itoa(request.port), nil, err
 }
 
 func (inbound *Socks5Inbound) Fallback(reverseLocalAddr string, rawdata []byte) {

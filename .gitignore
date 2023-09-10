@@ -4,3 +4,4 @@ pkg
 rules
 *.iml
 *.exe
+*.run

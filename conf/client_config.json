@@ -3,7 +3,13 @@
     "host": "0.0.0.0",
     "port": "8080",
     "protocol": "http"
-  }],
+  },
+  {
+    "host": "0.0.0.0",
+    "port": "8081",
+    "protocol": "socks"
+  }
+  ],
   "outbounds": [
     {
       "secret": "c2fb629e-c8a2-4323-80dc-36fc793f57f5",
