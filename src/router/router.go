@@ -33,9 +33,9 @@ func NewFullMatcher(fullDomains []string) Matcher {
 
 type RegexMatcher []*regexp.Regexp
 
-func NewRegexMatcher(RegexStrs []string) Matcher {
-	var regexMatcher RegexMatcher = make([]*regexp.Regexp, len(RegexStrs))
-	for i, ex := range RegexStrs {
+func NewRegexMatcher(regexStrings []string) Matcher {
+	var regexMatcher RegexMatcher = make([]*regexp.Regexp, len(regexStrings))
+	for i, ex := range regexStrings {
 		regexMatcher[i] = regexp.MustCompile(ex)
 	}
 	return regexMatcher
@@ -64,7 +64,7 @@ func (router Router) MatchAny(key string) bool {
 	return false
 }
 
-func NewRouter(tag string, ruleNames []string, routerPath string) (router *Router, err error) {
+func NewRouter(tag string, rules []string, routerPath string) (router *Router, err error) {
 	//allRules, err := readAllFromFile("rules")
 	allRules, err := readAllFromGob(routerPath)
 	if err != nil {
@@ -74,22 +74,34 @@ func NewRouter(tag string, ruleNames []string, routerPath string) (router *Route
 
 	fullDomains := make([]string, 0)
 	domains := make([]string, 0)
-	RegexStrs := make([]string, 0)
-	for _, ruleName := range ruleNames {
-		ruleList, _ := allRules[strings.ToUpper(ruleName)]
-		if ruleList == nil {
-			continue
+	regexStrings := make([]string, 0)
+	for _, rule := range rules {
+		ruleType, ruleStr := "rule", rule
+		kv := strings.Split(rule, ":")
+		if len(kv) > 1 {
+			ruleType, ruleStr = kv[0], kv[1]
 		}
-		for _, entry := range ruleList.Entry {
-			switch entry.Type {
-			case "full":
-				fullDomains = append(fullDomains, entry.Value)
-			case "domain":
-				domains = append(domains, entry.Value)
-			case "regexp":
-				RegexStrs = append(RegexStrs, entry.Value)
-			default:
-				// include here
+		switch ruleType {
+		case "full": // "full:string"
+			fullDomains = append(fullDomains, ruleStr)
+		case "domain": // "domain:string"
+			domains = append(domains, ruleStr)
+		case "regexp": // "regex:string"
+			regexStrings = append(regexStrings, ruleStr)
+		default: // "rule:string" || "string"
+			ruleList, exist := allRules[strings.ToUpper(ruleStr)]
+			if ruleList == nil || exist != true {
+				break
+			}
+			for _, entry := range ruleList.Entry {
+				switch entry.Type {
+				case "full":
+					fullDomains = append(fullDomains, entry.Value)
+				case "domain":
+					domains = append(domains, entry.Value)
+				case "regexp":
+					regexStrings = append(regexStrings, entry.Value)
+				}
 			}
 		}
 	}
@@ -100,10 +112,10 @@ func NewRouter(tag string, ruleNames []string, routerPath string) (router *Route
 	log.Printf(
 		"%d rules with %d domains loaded\n",
 		len(allRules),
-		len(fullDomains)+len(RegexStrs)+len(domains),
+		len(fullDomains)+len(regexStrings)+len(domains),
 	)
 	router.matchers = append(router.matchers, NewFullMatcher(fullDomains))
-	router.matchers = append(router.matchers, NewRegexMatcher(RegexStrs))
+	router.matchers = append(router.matchers, NewRegexMatcher(regexStrings))
 	router.matchers = append(router.matchers, structure.NewACAutomaton(domains))
 	return
 }

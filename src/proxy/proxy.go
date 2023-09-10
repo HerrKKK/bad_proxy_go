@@ -121,7 +121,7 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	_ = out.Close()
 }
 
-func (proxy Proxy) route(address string) (outbound Outbound) {
+func (proxy Proxy) route(address string) Outbound {
 	// If s does not contain sep and sep is not empty,
 	// Split returns a slice of length 1 whose only element is s
 	tag := ""
@@ -132,5 +132,9 @@ func (proxy Proxy) route(address string) (outbound Outbound) {
 			break
 		}
 	}
-	return *proxy.outbounds[tag]
+	outbound, exist := proxy.outbounds[tag]
+	if exist == false {
+		return *proxy.outbounds[""]
+	}
+	return *outbound
 }

@@ -18,20 +18,6 @@
       "protocol": "btp",
       "transmit": "ws",
       "ws_path": "/bp"
-    },
-    {
-      "tag": "direct",
-      "protocol": "freedom"
-    }
-  ],
-  "routers": [
-    {
-      "tag": "direct",
-      "rules": [
-        "www.ipaddress.my",
-        "wwr.icu",
-        "ifconfig.me"
-      ]
     }
   ]
 }

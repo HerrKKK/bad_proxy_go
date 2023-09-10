@@ -2,6 +2,8 @@
 .vscode
 pkg
 rules
+build
 *.iml
 *.exe
 *.run
+conf/config.json
