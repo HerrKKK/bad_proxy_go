@@ -10,6 +10,7 @@ import (
 	"errors"
 	"go_proxy/structure"
 	"io"
+	"log"
 	"math/big"
 	"net"
 	"strconv"
@@ -60,8 +61,8 @@ func GetBtpCache() *structure.LRU[string] {
 
 func (request *BTPRequest) validate(secret string) (err error) {
 	defer func() {
-		if e := recover(); e != nil {
-			err = errors.New("btp validation panic")
+		if r := recover(); r != nil {
+			log.Println(r)
 		}
 	}()
 	if request.confusionLen < 0 || request.confusionLen > btpMaxConfusionLen {
@@ -91,9 +92,9 @@ func (request *BTPRequest) validate(secret string) (err error) {
 
 func parseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
 	defer func() {
-		if e := recover(); e != nil {
+		if r := recover(); r != nil {
 			request.Payload = rawdata // restore raw data
-			err = errors.New("btp parse panic")
+			log.Println(r)
 		}
 	}()
 	request = &BTPRequest{}

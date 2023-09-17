@@ -304,7 +304,7 @@ Typical server example:
       "protocol": "tls",
       "tls_cert_path": "<tls certificate path>",
       "tls_key_path": "<tls private key path>"
-    },
+    }
   ],
   "outbounds": [
     {
