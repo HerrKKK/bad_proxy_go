@@ -76,17 +76,17 @@ func NewRouter(tag string, rules []string, routerPath string) (router *Router, e
 	domains := make([]string, 0)
 	regexStrings := make([]string, 0)
 	for _, rule := range rules {
-		ruleType, ruleStr := "rule", rule
+		ruleType, ruleStr := RULE, rule
 		kv := strings.Split(rule, ":")
 		if len(kv) > 1 {
-			ruleType, ruleStr = kv[0], kv[1]
+			ruleType, ruleStr = RuleType(kv[0]), kv[1]
 		}
 		switch ruleType {
-		case "full": // "full:string"
+		case FULL: // "full:string"
 			fullDomains = append(fullDomains, ruleStr)
-		case "domain": // "domain:string"
+		case DOMAIN: // "domain:string"
 			domains = append(domains, ruleStr)
-		case "regexp": // "regex:string"
+		case REGEXP: // "regex:string"
 			regexStrings = append(regexStrings, ruleStr)
 		default: // "rule:string" || "string"
 			ruleList, exist := allRules[strings.ToUpper(ruleStr)]

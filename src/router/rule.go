@@ -10,6 +10,16 @@ import (
 	"strings"
 )
 
+type RuleType string
+
+const (
+	FULL    RuleType = "full"
+	DOMAIN  RuleType = "domain"
+	REGEXP  RuleType = "regexp"
+	INCLUDE RuleType = "include"
+	RULE    RuleType = "rule"
+)
+
 type Entry struct {
 	Type  string // full, domain, regexp, include
 	Value string
@@ -94,7 +104,7 @@ func parseDomain(domain string) (*Entry, error) {
 	entry := Entry{}
 	kv := strings.Split(domain, ":")
 	if len(kv) == 1 { // prefix omitted
-		entry.Type = "domain"
+		entry.Type = string(DOMAIN)
 		entry.Value = strings.ToLower(kv[0])
 		return &entry, nil
 	}
@@ -118,7 +128,7 @@ func parseList(list *List, listRef map[string]*List) (*ParsedList, error) {
 	for hasInclude == true { // read inclusion recursively
 		newEntryList := make([]Entry, 0, len(entryList))
 		for _, entry := range entryList {
-			if entry.Type == "include" {
+			if entry.Type == string(INCLUDE) {
 				refName := strings.ToUpper(entry.Value)
 				InclusionName := refName
 				if pl.Inclusion[InclusionName] { // skip existed inclusion
