@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go_proxy/proxy"
@@ -26,6 +27,18 @@ const (
 		--rule-path         specify text rule files path, default ./rules
 	`
 )
+
+func ReadConfig(path string) (config proxy.Config, err error) {
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		return
+	}
+	return config, nil
+}
 
 func main() {
 	if len(os.Args) < 2 {
