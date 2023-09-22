@@ -19,11 +19,11 @@
   "routers": [
     {
       "tag": "direct",
-      "rules": [
-        "www.ipaddress.my",
-        "wwr.icu",
-        "ifconfig.me",
-        "cn"
+      "domain": [
+        "full:www.ipaddress.my",
+        "domain:wwr.icu",
+        "full:ifconfig.me",
+        "rule:cn"
       ]
     }
   ]

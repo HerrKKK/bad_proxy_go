@@ -28,11 +28,15 @@ func NewProxy(config Config) (newProxy Proxy) {
 	newProxy.outbounds = make(map[string]*Outbound, 10)
 	newProxy.routers = make([]router.Router, 0)
 	for _, r := range config.Router {
-		domains := make([]string, 0)
+		domainRules := make([]string, 0)
 		for _, domain := range r.Domain {
-			domains = append(domains, domain)
+			domainRules = append(domainRules, domain)
 		}
-		newRouter, err := router.NewRouter(r.Tag, domains, config.RouterPath)
+		ipRules := make([]string, 0)
+		for _, ipRule := range r.Ip {
+			ipRules = append(ipRules, ipRule)
+		}
+		newRouter, err := router.NewRouter(r.Tag, domainRules, ipRules, config.RouterPath)
 		if err != nil {
 			log.Println("wrong router:", r.Tag)
 			continue

@@ -3,13 +3,15 @@ package router
 import (
 	"go_proxy/structure"
 	"log"
+	"net"
 	"regexp"
 	"strings"
 )
 
 type Config struct {
 	Tag    string   `json:"tag"`
-	Domain []string `json:"rules"`
+	Domain []string `json:"domain"`
+	Ip     []string `json:"ip"`
 }
 
 type Matcher interface {
@@ -50,6 +52,48 @@ func (matcher RegexMatcher) MatchAny(key string) bool {
 	return false
 }
 
+type IpMatcher struct {
+	ipNets []*net.IPNet
+	ips    []net.IP
+}
+
+func NewIpMatcher(ipRules []string) Matcher {
+	ipMatcher := IpMatcher{
+		ipNets: make([]*net.IPNet, 0),
+		ips:    make([]net.IP, 0),
+	}
+	for _, ipRule := range ipRules {
+		ip := net.ParseIP(ipRule)
+		if ip != nil {
+			ipMatcher.ips = append(ipMatcher.ips, ip)
+			continue
+		}
+		_, ipNet, err := net.ParseCIDR(ipRule)
+		if err == nil {
+			ipMatcher.ipNets = append(ipMatcher.ipNets, ipNet)
+		}
+	}
+	return ipMatcher
+}
+
+func (matcher IpMatcher) MatchAny(key string) bool {
+	ip := net.ParseIP(key)
+	if ip == nil {
+		return false
+	}
+	for _, ipNet := range matcher.ipNets {
+		if ipNet.Contains(ip) {
+			return true
+		}
+	}
+	for _, i := range matcher.ips {
+		if string(ip) == string(i) {
+			return true
+		}
+	}
+	return false
+}
+
 type Router struct {
 	Tag      string
 	matchers []Matcher
@@ -64,7 +108,7 @@ func (router Router) MatchAny(key string) bool {
 	return false
 }
 
-func NewRouter(tag string, domainRules []string, routerPath string) (router *Router, err error) {
+func NewRouter(tag string, domainRules []string, ipRules []string, routerPath string) (router *Router, err error) {
 	//allRules, err := readAllFromFile("rules")
 	allRules, err := readAllFromGob(routerPath)
 	if err != nil {
@@ -116,6 +160,7 @@ func NewRouter(tag string, domainRules []string, routerPath string) (router *Rou
 	)
 	router.matchers = append(router.matchers, NewFullMatcher(fullDomains))
 	router.matchers = append(router.matchers, NewRegexMatcher(regexStrings))
+	router.matchers = append(router.matchers, NewIpMatcher(ipRules))
 	router.matchers = append(router.matchers, structure.NewACAutomaton(domains))
 	return
 }

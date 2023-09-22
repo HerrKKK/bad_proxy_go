@@ -27,9 +27,6 @@ type Outbound struct {
 
 func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundConnect, err error) {
 	switch outbound.protocol {
-	// *BtpOutbound implemented OutboundConnect,
-	// here we return the pointer of BtpOutbound, which is an OutboundConnect
-	// simply, *BtpOutbound is OutboundConnect
 	case "btp":
 		var conn, err = transport.Dial(
 			outbound.address,
