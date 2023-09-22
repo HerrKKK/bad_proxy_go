@@ -8,8 +8,8 @@ import (
 )
 
 type Config struct {
-	Tag   string   `json:"tag"`
-	Rules []string `json:"rules"`
+	Tag    string   `json:"tag"`
+	Domain []string `json:"rules"`
 }
 
 type Matcher interface {
@@ -64,7 +64,7 @@ func (router Router) MatchAny(key string) bool {
 	return false
 }
 
-func NewRouter(tag string, rules []string, routerPath string) (router *Router, err error) {
+func NewRouter(tag string, domainRules []string, routerPath string) (router *Router, err error) {
 	//allRules, err := readAllFromFile("rules")
 	allRules, err := readAllFromGob(routerPath)
 	if err != nil {
@@ -75,7 +75,7 @@ func NewRouter(tag string, rules []string, routerPath string) (router *Router, e
 	fullDomains := make([]string, 0)
 	domains := make([]string, 0)
 	regexStrings := make([]string, 0)
-	for _, rule := range rules {
+	for _, rule := range domainRules {
 		ruleType, ruleStr := RULE, rule
 		kv := strings.Split(rule, ":")
 		if len(kv) > 1 {
