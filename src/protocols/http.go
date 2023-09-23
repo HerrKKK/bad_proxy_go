@@ -15,6 +15,7 @@ type Request interface {
 type HTTPRequest struct {
 	method  string
 	url     string
+	path    string
 	address string
 	payload []byte
 }
@@ -29,15 +30,16 @@ func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 	if err != nil {
 		return
 	}
-	hostPortURL, err := url.Parse(request.url)
+	url, err := url.Parse(request.url)
 	if err != nil { // Just believe url is an ip when parsing failed, leave err behind.
 		request.address = request.url
-	} else if len(hostPortURL.Host) == 0 { // for opaque urls.
-		request.address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
+	} else if len(url.Host) == 0 { // for opaque urls.
+		request.address = url.Scheme + ":" + url.Opaque
 	} else { // url parsed successfully.
-		request.address = hostPortURL.Host
+		request.address = url.Host
 	}
 
+	request.path = url.Path
 	if strings.Index(request.address, ":") == -1 {
 		request.address = request.address + ":80"
 	}
@@ -78,6 +80,8 @@ func (inbound *HttpInbound) Connect() (targetAddr string, payload []byte, err er
 		}
 	}
 	payload = payload[:length]
+	/* replace url with path */
+	payload = bytes.Replace(payload, []byte(request.url), []byte(request.path), 1)
 	return
 }
 
