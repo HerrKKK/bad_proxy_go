@@ -13,17 +13,17 @@ type Request interface {
 }
 
 type HTTPRequest struct {
-	Method  string
+	method  string
 	url     string
-	Address string
-	Payload []byte
+	address string
+	payload []byte
 }
 
 func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 	_, err = fmt.Sscanf(
-		string(buffer[:bytes.IndexByte(buffer[:], '\n')]),
+		string(buffer[:bytes.IndexByte(buffer, '\n')]),
 		"%s%s",
-		&request.Method,
+		&request.method,
 		&request.url,
 	)
 	if err != nil {
@@ -31,18 +31,18 @@ func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 	}
 	hostPortURL, err := url.Parse(request.url)
 	if err != nil { // Just believe url is an ip when parsing failed, leave err behind.
-		request.Address = request.url
+		request.address = request.url
 	} else if len(hostPortURL.Host) == 0 { // for opaque urls.
-		request.Address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
+		request.address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
 	} else { // url parsed successfully.
-		request.Address = hostPortURL.Host
+		request.address = hostPortURL.Host
 	}
 
-	if strings.Index(request.Address, ":") == -1 {
-		request.Address = request.Address + ":80"
+	if strings.Index(request.address, ":") == -1 {
+		request.address = request.address + ":80"
 	}
 
-	request.Payload = buffer[bytes.Index(buffer[:], []byte("\r\n\r\n")):]
+	request.payload = buffer[bytes.Index(buffer, []byte("\r\n\r\n")):]
 	return request, nil
 }
 
@@ -51,23 +51,21 @@ type HttpInbound struct {
 }
 
 func (inbound *HttpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
-	_ = reverseLocalAddr
-	_ = rawdata
-	return
+	_, _ = reverseLocalAddr, rawdata
 }
 
 func (inbound *HttpInbound) Connect() (targetAddr string, payload []byte, err error) {
 	payload = make([]byte, 8196)
-	length, err := inbound.Conn.Read(payload[:])
+	length, err := inbound.Conn.Read(payload)
 	if err != nil {
 		return
 	}
-	request, err := HTTPRequest{}.Parse(payload[:])
+	request, err := HTTPRequest{}.Parse(payload)
 	if err != nil {
 		return
 	}
-	targetAddr = request.Address
-	if request.Method == "CONNECT" {
+	targetAddr = request.address
+	if request.method == "CONNECT" {
 		var response = "HTTP/1.1 200 Connection Established\r\nConnection: close\r\n\r\n"
 		_, err = inbound.Conn.Write([]byte(response))
 		if err != nil {

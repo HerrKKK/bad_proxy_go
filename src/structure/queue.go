@@ -18,7 +18,7 @@ func NewQueue[T string | *ACAutomaton](maxSize int, initSize int) (queue *Queue[
 		panic("init size must be positive")
 	}
 	queue = &Queue[T]{
-		data:    make([]T, initSize)[:],
+		data:    make([]T, initSize),
 		maxSize: maxSize,
 		head:    0,
 		tail:    0,

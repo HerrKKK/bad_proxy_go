@@ -38,8 +38,8 @@ const (
 )
 
 type BTPRequest struct {
-	Address      string
-	Payload      []byte
+	address      string
+	payload      []byte
 	digest       string
 	confusionLen int
 	timediff     int
@@ -93,7 +93,7 @@ func (request *BTPRequest) validate(secret string) (err error) {
 func parseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			request.Payload = rawdata // restore raw data
+			request.payload = rawdata // restore raw data
 			log.Println(r)
 		}
 	}()
@@ -114,8 +114,8 @@ func parseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
 	pos += btpPortLen
 
 	request.headerLen = pos - request.confusionLen - hostLen
-	request.Address = host + ":" + port
-	request.Payload = rawdata[pos:]
+	request.address = host + ":" + port
+	request.payload = rawdata[pos:]
 	request.rawdata = rawdata
 	return request, nil
 }
@@ -196,7 +196,7 @@ func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err err
 	if err != nil { // try to handle http connection
 		return
 	}
-	return request.Address, request.Payload, nil
+	return request.address, request.payload, nil
 }
 
 func (inbound *BtpInbound) Read(b []byte) (int, error) {
