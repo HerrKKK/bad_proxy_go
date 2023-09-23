@@ -8,7 +8,7 @@ type FreeOutbound struct {
 
 func (outbound *FreeOutbound) Connect(targetAddr string, payload []byte) (err error) {
 	_ = targetAddr
-	_, err = outbound.Conn.Write(payload)
+	_, err = outbound.Write(payload)
 	return
 }
 
@@ -21,8 +21,5 @@ func (outbound *FreeOutbound) Write(b []byte) (int, error) {
 }
 
 func (outbound *FreeOutbound) Close() error {
-	if outbound.Conn == nil {
-		return nil
-	}
 	return outbound.Conn.Close()
 }

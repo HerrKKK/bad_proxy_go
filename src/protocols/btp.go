@@ -184,7 +184,7 @@ func (inbound *BtpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
 
 func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err error) {
 	payload = make([]byte, 8196) // return rawdata on error
-	length, err := inbound.Conn.Read(payload)
+	length, err := inbound.Read(payload)
 	if err != nil {
 		return
 	}
@@ -221,7 +221,7 @@ func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err err
 	if err != nil {
 		return
 	}
-	_, err = outbound.Conn.Write(payload)
+	_, err = outbound.Write(payload)
 	return
 }
 

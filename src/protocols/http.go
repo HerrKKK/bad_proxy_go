@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-type Request interface {
-	Parse()
-}
-
 type HTTPRequest struct {
 	method  string
 	url     string
@@ -20,7 +16,7 @@ type HTTPRequest struct {
 	payload []byte
 }
 
-func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
+func parseHttpRequest(buffer []byte) (request HTTPRequest, err error) {
 	_, err = fmt.Sscanf(
 		string(buffer[:bytes.IndexByte(buffer, '\n')]),
 		"%s%s",
@@ -30,16 +26,16 @@ func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 	if err != nil {
 		return
 	}
-	url, err := url.Parse(request.url)
+	requestUrl, err := url.Parse(request.url)
 	if err != nil { // Just believe url is an ip when parsing failed, leave err behind.
 		request.address = request.url
-	} else if len(url.Host) == 0 { // for opaque urls.
-		request.address = url.Scheme + ":" + url.Opaque
+	} else if len(requestUrl.Host) == 0 { // for opaque urls.
+		request.address = requestUrl.Scheme + ":" + requestUrl.Opaque
 	} else { // url parsed successfully.
-		request.address = url.Host
+		request.address = requestUrl.Host
 	}
 
-	request.path = url.Path
+	request.path = requestUrl.Path
 	if strings.Index(request.address, ":") == -1 {
 		request.address = request.address + ":80"
 	}
@@ -58,23 +54,23 @@ func (inbound *HttpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
 
 func (inbound *HttpInbound) Connect() (targetAddr string, payload []byte, err error) {
 	payload = make([]byte, 8196)
-	length, err := inbound.Conn.Read(payload)
+	length, err := inbound.Read(payload)
 	if err != nil {
 		return
 	}
-	request, err := HTTPRequest{}.Parse(payload)
+	request, err := parseHttpRequest(payload)
 	if err != nil {
 		return
 	}
 	targetAddr = request.address
 	if request.method == "CONNECT" {
 		var response = "HTTP/1.1 200 Connection Established\r\nConnection: close\r\n\r\n"
-		_, err = inbound.Conn.Write([]byte(response))
+		_, err = inbound.Write([]byte(response))
 		if err != nil {
 			return
 		}
 		payload = make([]byte, 8196) // clear
-		length, err = inbound.Conn.Read(payload)
+		length, err = inbound.Read(payload)
 		if err != nil {
 			return
 		}

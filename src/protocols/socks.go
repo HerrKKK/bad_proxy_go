@@ -123,22 +123,22 @@ type Socks5Outbound struct {
 func (outbound *Socks5Outbound) Connect(targetAddr string, payload []byte) (err error) {
 	// socks5 version, length of methods, methods: no-auth only
 	buffer := []byte{VERSION, 0x01, MethodNoAuth}
-	if _, err = outbound.Conn.Write(buffer); err != nil {
+	if _, err = outbound.Write(buffer); err != nil {
 		return
 	}
 	buffer = make([]byte, 1024)
-	_, err = outbound.Conn.Read(buffer)          // the chosen encryption
+	_, err = outbound.Read(buffer)               // the chosen encryption
 	if err != nil || buffer[2] != MethodNoAuth { // only no encryption supported
 		return
 	}
 
 	request := encodeSockS5Request(targetAddr)
-	if _, err = outbound.Conn.Write(request.toByteArray()); err != nil {
+	if _, err = outbound.Write(request.toByteArray()); err != nil {
 		return
 	}
 
 	buffer = make([]byte, 1024)
-	if _, err = outbound.Conn.Read(buffer); err != nil {
+	if _, err = outbound.Read(buffer); err != nil {
 		return
 	}
 	response, err := parseSockS5Message(buffer)
@@ -146,7 +146,7 @@ func (outbound *Socks5Outbound) Connect(targetAddr string, payload []byte) (err 
 		return
 	}
 
-	_, err = outbound.Conn.Write(payload)
+	_, err = outbound.Write(payload)
 	return
 }
 
@@ -208,7 +208,7 @@ func (inbound *Socks5Inbound) Connect() (targetAddr string, payload []byte, err 
 		because we relay data to outbound instead of a tcp connection.
 		TODO: The first message makes a glitch on btp side, but why?
 	*/
-	if _, err = inbound.Conn.Write(response.toByteArray()); err != nil {
+	if _, err = inbound.Write(response.toByteArray()); err != nil {
 		return
 	}
 
