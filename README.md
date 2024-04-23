@@ -52,10 +52,11 @@ go build -o bad_proxy.exe .
 if you want to discard windows gui, use `go build -o bad_proxy.exe -ldflags "-s -w -H=windowsgui" .`
 
 ### Run application
-`./bad_proxy run --config <json config path> --router-path <.dat rule file path>`
+`./bad_proxy --config <json config path> --router-path <.dat rule file path>`
 
 ### Build domain rule file "rule.bat"
-`./bad_proxy build --rule-path <rule directory of v2fly repository path>`
+`./bad_proxy build --rule-path <rule directory of v2fly repository path> --router-path <output binary routing file path>`
+
 
 ### Deploy with nginx
 
