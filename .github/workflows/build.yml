@@ -1,0 +1,33 @@
+name: Build
+on:
+  push:
+    branches:
+      - 'master'
+    paths-ignore:
+      - "**.yml"
+      - "**.md"
+      - "**.sh"
+      - "**.json"
+      - ".gitignore"
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bad_proxy_go
+        shell: bash
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+        with:
+          path: bad_proxy_go
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: bad_proxy_go/go.mod
+
+      - name: Build
+        run: go build -o bad_proxy_go
