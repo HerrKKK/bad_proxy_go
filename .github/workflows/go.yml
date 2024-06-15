@@ -1,0 +1,50 @@
+name: Build Release
+on:
+  push:
+    branches:
+      - release
+    paths-ignore:
+      - "**/README.md"
+      - "*.sh"
+      - "*.json"
+      - ".gitignore"
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bad_proxy_go
+        shell: bash
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          path: bad_proxy_go
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: bad_proxy_go/go.mod
+
+      - name: Prepare
+        run: |
+          echo "RELEASE_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
+          echo "TAG_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
+          echo "DIST_NAME=bad_proxy_go" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          chmod +x ./build.sh
+          ./build.sh ${{ env.DIST_NAME }}
+        env:
+          CGO_ENABLE: 0
+
+      - name: Release and upload assets
+        run: |
+          gh release create ${{ env.TAG_NAME }} --generate-notes --prerelease --title ${{ env.RELEASE_NAME }} ./*.zip ./*.sha256sum
+          cd ../ && rm -rf bad_proxy_go
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
