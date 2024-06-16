@@ -29,8 +29,8 @@ jobs:
 
       - name: Prepare
         run: |
-          echo "RELEASE_NAME=$(git describe --tags HEAD)" >> $GITHUB_ENV
-          echo "TAG_NAME=$(git describe --tags HEAD)" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
+          echo "TAG_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
           echo "DIST_NAME=bad_proxy_go" >> $GITHUB_ENV
 
       - name: Build
@@ -38,9 +38,9 @@ jobs:
           chmod +x build.sh
           ./build.sh ${{ env.DIST_NAME }}
 
-#      - name: Release and upload assets
-#        run: |
-#          gh release create ${{ env.TAG_NAME }} --latest --generate-notes --prerelease --title ${{ env.RELEASE_NAME }} ./*-${{ env.DIST_NAME }} ./${{ env.DIST_NAME }}.*
-#          cd ../ && rm -rf bad_proxy_go
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release and upload assets
+        run: |
+          gh release create ${{ env.TAG_NAME }} --latest --generate-notes --prerelease --title ${{ env.RELEASE_NAME }} ./*-${{ env.DIST_NAME }} ./${{ env.DIST_NAME }}.*
+          cd ../ && rm -rf bad_proxy_go
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

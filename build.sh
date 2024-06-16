@@ -10,6 +10,7 @@ function build () {
     sha256sum "${1}.zip" > "${1}.zip.sha256sum"
 }
 
+wget https://github.com/HerrKKK/domain-list-community/releases/latest/download/rules.dat
 for key in ${!build_targets[*]}
   do
     GOARCH=${key}
