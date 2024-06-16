@@ -1,10 +1,8 @@
 name: Release Distribution
 on:
   push:
-    tags:
-      - v1.**
     branches:
-      - master
+      - 'release/**'
     paths-ignore:
       - "**/README.md"
       - "*.sh"
