@@ -25,7 +25,7 @@ for key in ${!build_targets[*]}
       filename="${GOOS}-${GOARCH}-${dist_name}"
       if [ "${os}" == "windows" ]
       then
-        build "./${filename}" "_cli.exe" "-ldflags=\"-H windowsgui\""
+        build "./${filename}" "_cli.exe" -ldflags="-H windowsgui"
         build "./${filename}" ".exe"
       fi
       build "./${GOOS}-${GOARCH}-${dist_name}"
