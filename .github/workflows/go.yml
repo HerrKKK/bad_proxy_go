@@ -1,11 +1,12 @@
-name: Build project
+name: Build Release
 on:
   push:
     branches:
       - master
     paths-ignore:
       - "**/README.md"
-      - "conf/*"
+      - "*.json"
+      - ".gitignore"
   workflow_dispatch:
 jobs:
   build:
@@ -24,70 +25,22 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: bad_proxy_go/src/go.mod
+          go-version-file: ./go.mod
 
-      - name: Set variables
+      - name: Prepare
         run: |
           echo "RELEASE_NAME=$(git describe --tags HEAD)" >> $GITHUB_ENV
           echo "TAG_NAME=$(git describe --tags HEAD)" >> $GITHUB_ENV
           echo "DIST_NAME=bad_proxy_go" >> $GITHUB_ENV
 
-      - name: Build amd64 linux
-        env:
-          GOOS: linux
-          GOARCH: amd64
+      - name: Build
         run: |
-          cd ./src
-          go build -o ../$GOOS-$GOARCH-${{ env.DIST_NAME }}
+          chmod +x build.sh
+          ./build.sh ${{ env.DIST_NAME }}
 
-      - name: Build amd64 windows
-        env:
-          CGO_ENABLE: 0
-          GOOS: windows
-          GOARCH: amd64
-        run: |
-          cd ./src
-          go build -o ../$GOOS-$GOARCH-${{ env.DIST_NAME }} -ldflags="-H windowsgui"
-
-      - name: Build amd64 darwin
-        env:
-          CGO_ENABLE: 0
-          GOOS: darwin
-          GOARCH: amd64
-        run: |
-          cd ./src
-          go build -o ../$GOOS-$GOARCH-${{ env.DIST_NAME }}
-
-      - name: Build arm64 linux
-        env:
-          CGO_ENABLE: 0
-          GOOS: linux
-          GOARCH: arm64
-        run: |
-          cd ./src
-          go build -o ../$GOOS-$GOARCH-${{ env.DIST_NAME }}
-
-      - name: Build arm64 darwin
-        env:
-          CGO_ENABLE: 0
-          GOOS: darwin
-          GOARCH: arm64
-        run: |
-          cd ./src
-          go build -o ../$GOOS-$GOARCH-${{ env.DIST_NAME }}
-
-      - name: Build arm64 android
-        env:
-          CGO_ENABLE: 0
-          GOOS: android
-          GOARCH: arm64
-        run: |
-          cd ./src
-          go build -o ../$GOOS-$GOARCH-${{ env.DIST_NAME }}
-
-      - name: Release and upload assets
-        run: |
-          gh release create ${{ env.TAG_NAME }} --latest --title ${{ env.RELEASE_NAME }} ./${{ env.DIST_NAME }} ./${{ env.DIST_NAME }}.*
-          cd ../ && rm -rf bad_proxy_go
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Release and upload assets
+#        run: |
+#          gh release create ${{ env.TAG_NAME }} --latest --generate-notes --prerelease --title ${{ env.RELEASE_NAME }} ./*-${{ env.DIST_NAME }} ./${{ env.DIST_NAME }}.*
+#          cd ../ && rm -rf bad_proxy_go
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
