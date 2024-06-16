@@ -45,8 +45,7 @@ BTP is a simple stateless protocol running at 7th layer.
 ## Compilation and deployment
 
 ```
-cd ./src
-go build -o bad_proxy.exe .
+go build -o bad_proxy.exe
 ```
 
 if you want to discard windows gui, use `go build -o bad_proxy.exe -ldflags "-s -w -H=windowsgui" .`

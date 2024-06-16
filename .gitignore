@@ -3,6 +3,7 @@
 pkg
 rules
 build
+*.dat
 *.iml
 *.exe
 *.run
