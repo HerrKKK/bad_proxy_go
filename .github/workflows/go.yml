@@ -1,8 +1,10 @@
-name: Build Release
+name: Release Distribution
 on:
   push:
+    tags:
+      - v1.**
     branches:
-      - release
+      - master
     paths-ignore:
       - "**/README.md"
       - "*.sh"
@@ -31,6 +33,7 @@ jobs:
 
       - name: Prepare
         run: |
+          git fetch --prune --unshallow --tags
           echo "RELEASE_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
           echo "TAG_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
           echo "DIST_NAME=bad_proxy_go" >> $GITHUB_ENV
