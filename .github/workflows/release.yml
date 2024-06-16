@@ -1,8 +1,8 @@
 name: Release Distribution
 on:
   push:
-    branches:
-      - "release/**"
+    tags:
+      - "v1.**"
     paths-ignore:
       - "**.yml"
       - "**.md"
@@ -11,8 +11,8 @@ on:
       - ".gitignore"
   workflow_dispatch:
 jobs:
-  build:
-    name: Build
+  release_github:
+    name: Release for github
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,29 +23,37 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: bad_proxy_go
-
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: bad_proxy_go/go.mod
-
-      - name: Prepare
-        run: |
-          git fetch --prune --unshallow --tags
-          echo "RELEASE_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
-          echo "TAG_NAME=$(git describe --tags HEAD --always)" >> $GITHUB_ENV
-          echo "DIST_NAME=bad_proxy_go" >> $GITHUB_ENV
-
       - name: Build
         run: |
           chmod +x ./build.sh
-          ./build.sh ${{ env.DIST_NAME }}
-        env:
-          CGO_ENABLE: 0
-
+          ./build.sh ${{ vars.DIST_NAME }}
       - name: Release and upload assets
-        run: |
-          gh release create ${{ env.TAG_NAME }} --generate-notes --prerelease --title ${{ env.RELEASE_NAME }} ./*.zip ./*.sha256sum
-          cd ../ && rm -rf bad_proxy_go
+        run: gh release create ${{ github.ref }} --title ${{ github.ref }} --generate-notes --latest ./*.tar.gz ./*.zip ./*.sha256sum
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release_dockerhub:
+    name: Release for dockerhub
+    runs-on: ubuntu-latest
+    needs: release_github
+    steps:
+      - name: Set up Docker Build
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push tag
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: wwricu/bad_proxy_go:${{ github.ref }}
+      - name: Build and push latest
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: wwricu/bad_proxy_go:latest

@@ -2,7 +2,7 @@ name: Build
 on:
   push:
     branches:
-      - 'master'
+      - master
     paths-ignore:
       - "**.yml"
       - "**.md"
@@ -23,11 +23,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: bad_proxy_go
-
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: bad_proxy_go/go.mod
-
       - name: Build
-        run: go build -o bad_proxy_go
+        run: |
+          chmod +x ./build.sh
+          ./build.sh ${{ vars.DIST_NAME }}
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ vars.DIST_NAME }}.*
+          overwrite: true

@@ -1,11 +1,13 @@
-FROM golang:alpine
+FROM debian:stable-slim
 
-ADD ./src /bad_proxy_go/
-COPY ./conf/server_config.json /bad_proxy_go/proxy_config.json
-COPY ./conf/rules.dat /bad_proxy_go/rules.dat
-WORKDIR /bad_proxy_go
-RUN go build -o bad_proxy \
+ADD https://github.com/HerrKKK/bad_proxy_go/releases/latest/download/bad_proxy-linux-amd64.tar.gz /root
+
+RUN cd /root && tar xzvf bad_proxy-linux-amd64.tar.gz \
+&& mkdir /etc/bad_proxy && rm bad_proxy-linux-amd64.tar.gz \
+&& cp ./bad_proxy-linux-amd64 /usr/bin/bad_proxy \
+&& cp ./config.json /etc/bad_proxy/config.json \
+&& cp ./rules.dat /etc/bad_proxy/rules.dat \
 && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
 && echo 'Asia/Shanghai' > /etc/timezone
 
-CMD ["./bad_proxy", "run", "--config", "proxy_config.json", "--router-path", "rules.dat"]
+CMD ["/usr/bin/bad_proxy", "--config", "/etc/bad_proxy/config.json", "--router-path", "/etc/bad_proxy/rules.dat"]

@@ -4,30 +4,34 @@ build_targets=(["amd64"]="linux windows darwin" ["arm64"]="linux android darwin"
 rule_filename="rules.dat"
 dist_name=${1}
 
-function build () {
-    go build -o "./${1}${2}" "${3}"
-    zip "${1}.zip" "./${1}" ${rule_filename} config.json
-    sha256sum "${1}.zip" > "${1}.zip.sha256sum"
+function package_zip() {
+    zip "${dist_name}-${GOOS}-${GOARCH}.zip" "./${1}" ${rule_filename} config.json
+    sha256sum "${dist_name}-${GOOS}-${GOARCH}.zip" > "${dist_name}-${GOOS}-${GOARCH}.zip.sha256sum"
 }
 
-if [ -e ${rule_filename} ]
-then
-  rm ${rule_filename}
-fi
+function package_tar_gz() {
+    tar czvf "${dist_name}-${GOOS}-${GOARCH}.tar.gz" "./${1}" ${rule_filename} config.json
+    sha256sum "${dist_name}-${GOOS}-${GOARCH}.tar.gz" > "${dist_name}-${GOOS}-${GOARCH}.tar.gz.sha256sum"
+}
+
 wget https://github.com/HerrKKK/domain-list-community/releases/latest/download/${rule_filename}
-for key in ${!build_targets[*]}
+for arch in ${!build_targets[*]}
   do
-    GOARCH=${key}
-    go_os_array=${build_targets[$key]}
+    go_os_array=${build_targets[$arch]}
     for os in ${go_os_array[@]}
     do
-      GOOS=${os}
-      filename="${GOOS}-${GOARCH}-${dist_name}"
-      if [ "${os}" == "windows" ]
+      export GOARCH=${arch}
+      export GOOS=${os}
+      filename="${dist_name}-${GOOS}-${GOARCH}"
+      if [ "${GOOS}" == "windows" ]
       then
-        build "./${filename}" "_cli.exe" -ldflags="-H windowsgui"
-        build "./${filename}" ".exe"
+        go build -o "./${filename}.exe"
+        package_zip "${filename}.exe"
+        go build -o "./${filename}_nogui.exe" -ldflags="-H windowsgui"
+        package_zip "${filename}_nogui.exe"
+      else
+        go build -o "./${filename}"
+        package_tar_gz "${filename}"
       fi
-      build "./${GOOS}-${GOARCH}-${dist_name}"
     done
   done
