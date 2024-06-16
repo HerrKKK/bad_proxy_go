@@ -69,13 +69,13 @@ func main() {
 }
 
 func run() (err error) {
-	configPath := flag.String("config", "conf/config.json", "config file path")
-	routerPath := flag.String("router-path", "conf/rules.dat", "router data path")
+	configPath := flag.String("config", "config.json", "config file path")
+	routerPath := flag.String("router-path", "rules.dat", "router data path")
 	flag.Parse()
 
 	config, err := ReadConfig(*configPath)
 	if err != nil {
-		fmt.Print("failed to build rules")
+		fmt.Print("failed to read config\n")
 		return
 	}
 	config.RouterPath = *routerPath
@@ -87,7 +87,7 @@ func run() (err error) {
 func build() (err error) {
 	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
 	rulePath := flag.String("rule-path", "./rules", "router data path")
-	routerPath := flag.String("router-path", "conf/rules.dat", "router data path")
+	routerPath := flag.String("router-path", "rules.dat", "router data path")
 	if err = buildCmd.Parse(os.Args[2:]); err != nil {
 		fmt.Println(err)
 		return
