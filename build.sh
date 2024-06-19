@@ -46,9 +46,9 @@ function main() {
         done
       done
 
-    mv ./*.tar.gz ./dist
-    mv ./*.zip ./dist
-    mv ./*.sha256sum ./dist
+    cp ./*.tar.gz ./dist
+    cp ./*.zip ./dist
+    cp ./*.sha256sum ./dist
 }
 
 main
