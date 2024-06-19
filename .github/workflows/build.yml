@@ -31,19 +31,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          path: dist
-          overwrite: true
-      - name: Debug
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug_dist
-          path: .
-          overwrite: true
-      - name: Debug
-        uses: actions/upload-artifact@v4
-        with:
-          name: wild
-          path: |
-            *.zip
-            *.gz
+          path: bad_proxy_go/dist
           overwrite: true
