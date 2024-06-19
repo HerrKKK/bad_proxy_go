@@ -32,7 +32,7 @@ jobs:
           chmod +x ./build.sh
           ./build.sh ${{ vars.DIST_NAME }}
       - name: Release and upload assets
-        run: gh release create ${{ github.ref }} --title ${{ github.ref }} --generate-notes --latest ./*.tar.gz ./*.zip ./*.sha256sum
+        run: gh release create ${{ github.ref }} --title ${{ github.ref }} --generate-notes --latest ./dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   release_dockerhub:
