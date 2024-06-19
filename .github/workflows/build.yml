@@ -1,4 +1,4 @@
-name: Build
+name: Build Artifact
 on:
   push:
     branches:
@@ -34,5 +34,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          path: ./${{ vars.DIST_NAME }}.*
+          path: ./dist
           overwrite: true
