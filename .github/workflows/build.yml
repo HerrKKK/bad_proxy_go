@@ -29,10 +29,11 @@ jobs:
           go-version-file: bad_proxy_go/go.mod
       - name: Build
         run: |
+          echo ${{ github.workspace }}
           chmod +x ./build.sh
           ./build.sh ${{ vars.DIST_NAME }}
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          path: ./dist
+          path: ${{ github.workspace }}/dist
           overwrite: true
