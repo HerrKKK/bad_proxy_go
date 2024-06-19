@@ -14,10 +14,6 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: bad_proxy_go
-        shell: bash
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
@@ -29,11 +25,25 @@ jobs:
           go-version-file: bad_proxy_go/go.mod
       - name: Build
         run: |
-          echo ${{ github.workspace }}
+          cd bad_proxy_go
           chmod +x ./build.sh
           ./build.sh ${{ vars.DIST_NAME }}
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/dist
+          path: dist
+          overwrite: true
+      - name: Debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug_dist
+          path: .
+          overwrite: true
+      - name: Debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: wild
+          path: |
+            *.zip
+            *.gz
           overwrite: true
