@@ -58,7 +58,5 @@ jobs:
         with:
           push: true
           sbom: true
-          tags: |
-            wwricu/bad_proxy_go:${{ github.ref_name }}
-            wwricu/bad_proxy_go:latest
           provenance: mode=max
+          tags: wwricu/bad_proxy_go:${{ github.ref_name }}, wwricu/bad_proxy_go:latest
