@@ -9,6 +9,7 @@ on:
       - "**.sh"
       - "**.json"
       - ".gitignore"
+  workflow_dispatch:
 jobs:
   release_github:
     name: Release on github
