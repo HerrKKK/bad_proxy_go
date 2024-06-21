@@ -1,7 +1,7 @@
 name: Build Artifact
 on:
   push:
-    branches:
+    branches-ignore:
       - master
     paths-ignore:
       - "**.yml"
@@ -12,9 +12,8 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    name: Build
+    name: Check
     runs-on: ubuntu-latest
-    permissions: write-all
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
@@ -28,14 +27,4 @@ jobs:
       - name: Build
         run: |
           cd bad_proxy_go
-          chmod +x ./build.sh
-          ./build.sh ${{ vars.DIST_NAME }}
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          path: bad_proxy_go/dist
-          overwrite: true
-      - name: Attest
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-path: 'bad_proxy_go/dist/**/*.tar.gz, bad_proxy_go/dist/**/*.zip'
+          go build -o bad_proxy

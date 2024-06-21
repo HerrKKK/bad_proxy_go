@@ -27,6 +27,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
+          cache: false
           go-version-file: bad_proxy_go/go.mod
       - name: Build
         run: |
