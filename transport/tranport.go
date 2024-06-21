@@ -2,6 +2,7 @@ package transport
 
 import (
 	"crypto/tls"
+	"errors"
 	"golang.org/x/net/websocket"
 	"net"
 	"net/http"
@@ -24,16 +25,15 @@ func GetProtocol(protocol string) ProtocolType {
 	return ProtocolType(protocol)
 }
 
-func Dial(address string, protocol ProtocolType, wsPath string) (conn net.Conn, err error) {
+func Dial(protocol ProtocolType, address string) (conn net.Conn, err error) {
+	if len(address) == 0 {
+		return nil, errors.New("address is nil")
+	}
 	switch protocol {
 	case TLS:
-		return tls.Dial(TCP.Str(), address, &tls.Config{InsecureSkipVerify: true})
+		return tls.Dial(TCP.Str(), address, &tls.Config{})
 	case WS, WSS:
-		return websocket.Dial(
-			protocol.Str()+"://"+address+wsPath,
-			"",
-			"http://localhost/",
-		)
+		return websocket.Dial(protocol.Str()+"://"+address, "", "http://localhost/")
 	default:
 		return net.Dial(TCP.Str(), address)
 	}

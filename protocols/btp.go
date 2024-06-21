@@ -141,7 +141,7 @@ func encodeBtpRequest(address string, payload []byte, secret string) (res []byte
 	hnp := strings.Split(address, ":")
 	host := []byte(hnp[0])
 	port, err := strconv.Atoi(hnp[1])
-	if err != nil {
+	if err != nil || port > int(^uint16(0)) {
 		return
 	}
 
