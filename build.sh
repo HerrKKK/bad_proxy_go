@@ -12,17 +12,6 @@ function prepare() {
     wget https://github.com/HerrKKK/domain-list-community/releases/latest/download/${rule_filename}
 }
 
-function package_zip() {
-    zip "${dist_name}-${GOOS}-${GOARCH}.zip" "./${1}" ${rule_filename} config.json
-    sha256sum "${dist_name}-${GOOS}-${GOARCH}.zip" > "${dist_name}-${GOOS}-${GOARCH}.zip.sha256sum"
-}
-
-function package_tar_gz() {
-    tar czvf "${dist_name}-${GOOS}-${GOARCH}.tar.gz" "./${1}" ${rule_filename} config.json
-    sha256sum "${dist_name}-${GOOS}-${GOARCH}.tar.gz" > "${dist_name}-${GOOS}-${GOARCH}.tar.gz.sha256sum"
-}
-
-
 function main() {
     prepare
     for arch in ${!build_targets[*]}
@@ -32,23 +21,22 @@ function main() {
         do
           export GOARCH=${arch}
           export GOOS=${os}
-          filename="${dist_name}-${GOOS}-${GOARCH}"
+          target="${dist_name}-${GOOS}-${GOARCH}"
           if [ "${GOOS}" == "windows" ]
           then
-            go build -o "./${filename}.exe"
-            package_zip "${filename}.exe"
-            go build -o "./${filename}_nogui.exe" -ldflags="-H windowsgui"
-            package_zip "${filename}_nogui.exe"
+            go build -o "./${target}.exe"
+            zip "${target}.zip" "./${target}.exe" ${rule_filename} config.json
+            go build -o "./${target}_cli.exe" -ldflags="-H windowsgui"
+            zip "${target}.zip" "./${target}_cli.exe" ${rule_filename} config.json
           else
-            go build -o "./${filename}"
-            package_tar_gz "${filename}"
+            go build -o "./${target}"
+            tar czvf "${dist_name}-${GOOS}-${GOARCH}.tar.gz" "./${target}" ${rule_filename} config.json
           fi
         done
       done
 
     mv ./*.tar.gz ./dist
     mv ./*.zip ./dist
-    mv ./*.sha256sum ./dist
 }
 
 main
