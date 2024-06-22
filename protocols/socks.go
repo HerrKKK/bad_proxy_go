@@ -215,9 +215,8 @@ func (inbound *Socks5Inbound) Connect() (targetAddr string, payload []byte, err 
 	return request.host + ":" + strconv.Itoa(request.port), nil, err
 }
 
-func (inbound *Socks5Inbound) Fallback(reverseLocalAddr string, rawdata []byte) {
-	_ = reverseLocalAddr
-	_ = rawdata
+func (inbound *Socks5Inbound) Fallback(rawData []byte) {
+	_ = rawData
 }
 
 func (inbound *Socks5Inbound) Read(b []byte) (int, error) {
