@@ -15,7 +15,7 @@ BPG works mainly with Bad Transfer Protocol (BTP) to protect connections being d
 4. TLS-based encryption
    BPG uses trivial TLS to encrypt data.
 5. Trivial response and Fallback
-   BPG could response with trivial HTTP message or pass the tcp connection to another HTTP server when any attack detected.
+   BPG could response with trivial HTTP message on any attack detected.
 6. Random message length
    A confusion is added to make the length of message random to avoid
 

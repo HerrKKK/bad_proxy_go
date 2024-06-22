@@ -19,7 +19,7 @@ type HTTPRequest struct {
 	Payload []byte
 }
 
-func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
+func parseHttpRequest(buffer []byte) (request HTTPRequest, err error) {
 	_, err = fmt.Sscanf(
 		string(buffer[:bytes.IndexByte(buffer[:], '\n')]),
 		"%s%s",
@@ -43,17 +43,15 @@ func (request HTTPRequest) Parse(buffer []byte) (req HTTPRequest, err error) {
 	}
 
 	request.Payload = buffer[bytes.Index(buffer[:], []byte("\r\n\r\n")):]
-	return request, nil
+	return
 }
 
 type HttpInbound struct {
 	Conn net.Conn
 }
 
-func (inbound *HttpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
-	_ = reverseLocalAddr
-	_ = rawdata
-	return
+func (inbound *HttpInbound) Fallback(rawData []byte) {
+	_ = rawData
 }
 
 func (inbound *HttpInbound) Connect() (targetAddr string, payload []byte, err error) {
@@ -62,7 +60,7 @@ func (inbound *HttpInbound) Connect() (targetAddr string, payload []byte, err er
 	if err != nil {
 		return
 	}
-	request, err := HTTPRequest{}.Parse(payload[:])
+	request, err := parseHttpRequest(payload[:])
 	if err != nil {
 		return
 	}

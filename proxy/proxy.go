@@ -11,7 +11,6 @@ import (
 type Proxy struct {
 	inbounds  []Inbound
 	outbounds map[string]*Outbound
-	fallback  FallbackConfig
 	routers   []router.Router
 }
 
@@ -19,12 +18,16 @@ type Config struct {
 	Inbounds   []InboundConfig  `json:"inbounds"`
 	Outbounds  []OutboundConfig `json:"outbounds"`
 	Router     []router.Config  `json:"routers"`
-	Fallback   FallbackConfig   `json:"fallback"`
 	RouterPath string
 }
 
+const (
+	BTP   = "btp"
+	SOCKS = "socks"
+	HTTP  = "http"
+)
+
 func NewProxy(config Config) (newProxy Proxy) {
-	newProxy.fallback = config.Fallback
 	newProxy.outbounds = make(map[string]*Outbound, 10)
 	newProxy.routers = make([]router.Router, 0)
 	for _, r := range config.Router {
@@ -72,9 +75,6 @@ func NewProxy(config Config) (newProxy Proxy) {
 }
 
 func (proxy Proxy) Start() {
-	if proxy.fallback.LocalAddr != "" && proxy.fallback.RemoteAddr != "" {
-		go StartReverseProxy(proxy.fallback.LocalAddr, proxy.fallback.RemoteAddr)
-	}
 	for _, inbound := range proxy.inbounds {
 		go func(inbound Inbound) { // TODO: Why reference pass does not work.
 			log.Println(inbound.protocol, "listen on", inbound.address)
@@ -105,7 +105,7 @@ func (proxy Proxy) proxy(in InboundConnect) {
 	address, payload, err := in.Connect() // handshake
 	if err != nil {
 		log.Println("inbound connect failed:", err)
-		in.Fallback(proxy.fallback.LocalAddr, payload)
+		in.Fallback(payload)
 		return
 	}
 	// routing to find outbound template

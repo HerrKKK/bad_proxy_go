@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"go_proxy/structure"
-	"io"
 	"log"
 	"math/big"
 	"net"
@@ -42,9 +41,9 @@ type BTPRequest struct {
 	Payload      []byte
 	digest       string
 	confusionLen int
-	timediff     int
+	timeDiff     int
 	headerLen    int
-	rawdata      []byte
+	rawData      []byte
 }
 
 var btpLRU *structure.LRU[string]
@@ -68,12 +67,12 @@ func (request *BTPRequest) validate(secret string) (err error) {
 	if request.confusionLen < 0 || request.confusionLen > btpMaxConfusionLen {
 		return errors.New("unexpected confusion length")
 	}
-	if request.timediff < -timeThreshold || timeThreshold < request.timediff {
+	if request.timeDiff < -timeThreshold || timeThreshold < request.timeDiff {
 		return errors.New("timeout or replay attack")
 	}
 
 	h := hmac.New(sha256.New, []byte(secret))
-	h.Write(request.rawdata[btpDigestLen:])
+	h.Write(request.rawData[btpDigestLen:])
 	if hex.EncodeToString(h.Sum(nil)) != request.digest {
 		return errors.New("digest mismatch, unauthorized connect")
 	}
@@ -90,33 +89,33 @@ func (request *BTPRequest) validate(secret string) (err error) {
 	return nil
 }
 
-func parseBtpRequest(rawdata []byte) (request *BTPRequest, err error) {
+func parseBtpRequest(rawData []byte) (request *BTPRequest, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			request.Payload = rawdata // restore raw data
+			request.Payload = rawData // restore raw data
 			log.Println(r)
 		}
 	}()
 	request = &BTPRequest{}
-	request.digest = hex.EncodeToString(rawdata[:btpDigestLen])
-	request.confusionLen = int(rawdata[btpDigestLen]) // uint8
+	request.digest = hex.EncodeToString(rawData[:btpDigestLen])
+	request.confusionLen = int(rawData[btpDigestLen]) // uint8
 
 	pos := btpDigestLen + btpConfusionLenDig + request.confusionLen
-	timestamp := binary.BigEndian.Uint32(rawdata[pos : pos+btpTimestampLen])
-	request.timediff = int(time.Now().Unix()) - int(timestamp)
+	timestamp := binary.BigEndian.Uint32(rawData[pos : pos+btpTimestampLen])
+	request.timeDiff = int(time.Now().Unix()) - int(timestamp)
 
 	pos += btpTimestampLen + btpDirectiveDig
-	hostLen := int(rawdata[pos])
+	hostLen := int(rawData[pos])
 	pos += btpHostLenDig
-	host := string(rawdata[pos : pos+hostLen])
+	host := string(rawData[pos : pos+hostLen])
 	pos += hostLen // possible out of bound
-	port := strconv.Itoa(int(binary.BigEndian.Uint16(rawdata[pos : pos+btpPortLen])))
+	port := strconv.Itoa(int(binary.BigEndian.Uint16(rawData[pos : pos+btpPortLen])))
 	pos += btpPortLen
 
 	request.headerLen = pos - request.confusionLen - hostLen
 	request.Address = host + ":" + port
-	request.Payload = rawdata[pos:]
-	request.rawdata = rawdata
+	request.Payload = rawData[pos:]
+	request.rawData = rawData
 	return request, nil
 }
 
@@ -168,22 +167,18 @@ type BtpInbound struct {
 	Secret string
 }
 
-func (inbound *BtpInbound) Fallback(reverseLocalAddr string, rawdata []byte) {
-	out, err := net.Dial("tcp", reverseLocalAddr)
-	defer inbound.Close()
-	defer out.Close()
+func (inbound *BtpInbound) Fallback(rawData []byte) {
+	_, err := parseHttpRequest(rawData)
 	if err != nil {
 		return
 	}
-	_, _ = out.Write(rawdata)
-
-	go io.Copy(inbound, out)
-	_, _ = io.Copy(out, inbound)
-	return
+	page := []byte("<html><body><a href=\"https://wwr.icu\">Please login<a>\r\n</body></html>")
+	header := []byte("HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nContent-Length:" + strconv.Itoa(len(page)) + "Connection: close \r\n\r\n")
+	_, err = inbound.Write(append(header, page...))
 }
 
 func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err error) {
-	payload = make([]byte, 8196) // return rawdata on error
+	payload = make([]byte, 8196) // return rawData on error
 	length, err := inbound.Conn.Read(payload)
 	if err != nil {
 		return

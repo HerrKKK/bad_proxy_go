@@ -30,14 +30,14 @@ func (outbound *Outbound) Dial(targetAddr string, payload []byte) (out OutboundC
 	// *BtpOutbound implemented OutboundConnect,
 	// here we return the pointer of BtpOutbound, which is an OutboundConnect
 	// simply, *BtpOutbound is OutboundConnect
-	case "btp":
+	case BTP:
 		var conn, err = transport.Dial(outbound.transmit, outbound.address+outbound.wsPath)
 		if err != nil {
 			return nil, err
 		}
 		log.Println("btp connect to", outbound.address)
 		out = &protocols.BtpOutbound{Conn: conn, Secret: outbound.secret}
-	case "socks":
+	case SOCKS:
 		var conn, err = transport.Dial(transport.TCP, outbound.address)
 		if err != nil {
 			return nil, err
