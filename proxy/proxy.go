@@ -115,8 +115,14 @@ func (proxy Proxy) proxy(in InboundConnect) {
 		log.Printf("outbound dial to %s failed\n", outbound.address)
 		return
 	}
-	go io.Copy(in, out)
-	_, _ = io.Copy(out, in)
+	go func() {
+		if _, err := io.Copy(in, out); err != nil {
+			log.Printf("write to %s failed\n", outbound.address)
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		log.Printf("read from %s failed\n", outbound.address)
+	}
 	_ = in.Close()
 	_ = out.Close()
 }

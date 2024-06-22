@@ -94,11 +94,11 @@ func NewRouter(tag string, rules []string, routerPath string) (router *Router, e
 			}
 			for _, entry := range ruleList.Entry {
 				switch entry.Type {
-				case "full":
+				case string(FULL):
 					fullDomains = append(fullDomains, entry.Value)
-				case "domain":
+				case string(DOMAIN):
 					domains = append(domains, entry.Value)
-				case "regexp":
+				case string(REGEXP):
 					regexStrings = append(regexStrings, entry.Value)
 				}
 			}
