@@ -70,15 +70,13 @@ func (root *ACAutomaton) MatchAny(key string) bool {
 
 func (root *ACAutomaton) build() {
 	queue := NewQueue[*ACAutomaton](0, 1000)
-	err := queue.Push(root)
-	if err != nil {
+	if err := queue.Push(root); err != nil {
 		panic(err)
 	}
 	for queue.Size() != 0 { // bfs without layer
 		s2 := queue.Pop()
 		for c, s1 := range s2.success {
-			err = queue.Push(s1)
-			if err != nil {
+			if err := queue.Push(s1); err != nil {
 				panic(err)
 			}
 			s3 := s2.failure

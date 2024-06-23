@@ -20,13 +20,12 @@ type HTTPRequest struct {
 }
 
 func parseHttpRequest(buffer []byte) (request HTTPRequest, err error) {
-	_, err = fmt.Sscanf(
+	if _, err = fmt.Sscanf(
 		string(buffer[:bytes.IndexByte(buffer[:], '\n')]),
 		"%s%s",
 		&request.Method,
 		&request.url,
-	)
-	if err != nil {
+	); err != nil {
 		return
 	}
 	hostPortURL, err := url.Parse(request.url)
