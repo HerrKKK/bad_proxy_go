@@ -1,6 +1,7 @@
 package main
 
 import (
+	"C"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -34,6 +35,19 @@ func ReadConfig(path string) (config proxy.Config, err error) {
 	return config, nil
 }
 
+//export run
+func run(configPath string, routerPath string) {
+	config, err := ReadConfig(configPath)
+	if err != nil {
+		fmt.Print("failed to read config\n")
+		return
+	}
+
+	config.RouterPath = routerPath
+	proxy.NewProxy(config).Start()
+	<-make(chan os.Signal)
+}
+
 func main() {
 	helpFlag := flag.Bool("help", false, "show help info")
 	versionFlag := flag.Bool("version", false, "show version info")
@@ -50,14 +64,5 @@ func main() {
 		return
 	}
 
-	config, err := ReadConfig(*configPath)
-	if err != nil {
-		fmt.Print("failed to read config\n")
-		return
-	}
-
-	config.RouterPath = *routerPath
-	proxy.NewProxy(config).Start()
-	<-make(chan os.Signal)
-	return
+	run(*configPath, *routerPath)
 }
