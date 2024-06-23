@@ -35,15 +35,20 @@ func ReadConfig(path string) (config proxy.Config, err error) {
 	return config, nil
 }
 
-//export run
-func run(configPath string, routerPath string) {
-	config, err := ReadConfig(configPath)
-	if err != nil {
-		fmt.Print("failed to read config\n")
-		return
+//export android
+func android() {
+	config := proxy.Config{
+		Inbounds:  make([]proxy.InboundConfig, 1),
+		Outbounds: make([]proxy.OutboundConfig, 1),
 	}
-
-	config.RouterPath = routerPath
+	config.Inbounds[0] = proxy.InboundConfig{
+		Host:     "0.0.0.0",
+		Port:     "11111",
+		Protocol: "http",
+	}
+	config.Outbounds[0] = proxy.OutboundConfig{
+		Protocol: "freedom",
+	}
 	proxy.NewProxy(config).Start()
 	<-make(chan os.Signal)
 }
@@ -64,5 +69,13 @@ func main() {
 		return
 	}
 
-	run(*configPath, *routerPath)
+	config, err := ReadConfig(*configPath)
+	if err != nil {
+		fmt.Print("failed to read config\n")
+		return
+	}
+
+	config.RouterPath = *routerPath
+	proxy.NewProxy(config).Start()
+	<-make(chan os.Signal)
 }
