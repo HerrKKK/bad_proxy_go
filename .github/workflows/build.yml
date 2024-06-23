@@ -33,6 +33,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
+          name: bad-proxy-go
           path: bad_proxy_go/dist
           overwrite: true
       - name: Attest
