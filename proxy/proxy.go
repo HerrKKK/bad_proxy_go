@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"C"
 	"go_proxy/router"
 	"go_proxy/transport"
 	"io"
@@ -65,8 +66,8 @@ func NewProxy(config Config) (newProxy Proxy) {
 			transmit: transport.GetProtocol(out.Transmit),
 			wsPath:   out.WsPath,
 		}
-		_, exist := newProxy.outbounds[out.Tag]
-		if exist == true {
+
+		if _, exist := newProxy.outbounds[out.Tag]; exist == true {
 			log.Fatalln("duplicate outbound tag")
 		}
 		newProxy.outbounds[out.Tag] = &newOutbound
@@ -115,8 +116,14 @@ func (proxy Proxy) proxy(in InboundConnect) {
 		log.Printf("outbound dial to %s failed\n", outbound.address)
 		return
 	}
-	go io.Copy(in, out)
-	_, _ = io.Copy(out, in)
+	go func() {
+		if _, err := io.Copy(in, out); err != nil {
+			log.Printf("write to %s failed\n", outbound.address)
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		log.Printf("read from %s failed\n", outbound.address)
+	}
 	_ = in.Close()
 	_ = out.Close()
 }
