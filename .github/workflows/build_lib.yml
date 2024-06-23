@@ -1,7 +1,7 @@
-name: Build Artifact
+name: Build lib
 on:
   push:
-    branches:
+    branches-ignore:
       - master
     paths-ignore:
       - "**.yml"
@@ -12,31 +12,32 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    name: Build
-    runs-on: ubuntu-latest
+    name: Build so lib for android
     permissions: write-all
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
         with:
           path: bad_proxy_go
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - name: set ndk
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
         with:
-          cache: false
-          go-version-file: bad_proxy_go/go.mod
-      - name: Build
+          ndk-version: r26d
+          add-to-path: true
+      - name: build
         run: |
           cd bad_proxy_go
-          chmod +x ./build.sh
-          ./build.sh ${{ vars.DIST_NAME }}
+          chmod +x ./build_lib.sh
+          ./build_lib.sh ${{ steps.setup-ndk.outputs.ndk-path }}
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: bad-proxy-go
-          path: bad_proxy_go/dist
+          name: libproxy.so
+          path: bad_proxy_go/libproxy.so
           overwrite: true
       - name: Attest
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: 'bad_proxy_go/dist/**/*.tar.gz, bad_proxy_go/dist/**/*.zip'
+          subject-path: 'bad_proxy_go/libproxy.so'
