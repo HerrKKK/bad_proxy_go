@@ -29,7 +29,7 @@ const (
 	HTTP  = "http"
 )
 
-func NewProxy(config Config) (newProxy Proxy) {
+func newProxy(config Config) (newProxy Proxy) {
 	newProxy.outbounds = make(map[string]*Outbound, 10)
 	newProxy.routers = make([]router.Router, 0)
 	for _, r := range config.Router {
@@ -166,6 +166,6 @@ func Startup(configPath string, routerPath string) (err error) {
 	}
 
 	config.RouterPath = routerPath
-	NewProxy(config).Start()
+	newProxy(config).Start()
 	return
 }
