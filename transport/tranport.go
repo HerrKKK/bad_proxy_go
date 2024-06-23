@@ -54,8 +54,7 @@ func Listen(
 		listener := &WsListener{ch: make(chan net.Conn)}
 		http.Handle(wsPath, websocket.Handler(listener.handle))
 		go func() {
-			err := http.ListenAndServe(address, nil)
-			if err != nil {
+			if err := http.ListenAndServe(address, nil); err != nil {
 				panic(err)
 			}
 		}()

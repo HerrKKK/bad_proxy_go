@@ -127,8 +127,8 @@ func (outbound *Socks5Outbound) Connect(targetAddr string, payload []byte) (err 
 		return
 	}
 	buffer = make([]byte, 1024)
-	_, err = outbound.Conn.Read(buffer)          // the chosen encryption
-	if err != nil || buffer[2] != MethodNoAuth { // only no encryption supported
+	// the chosen encryption
+	if _, err = outbound.Conn.Read(buffer); err != nil || buffer[2] != MethodNoAuth { // only no encryption supported
 		return
 	}
 

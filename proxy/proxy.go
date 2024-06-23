@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"C"
 	"go_proxy/router"
 	"go_proxy/transport"
 	"io"
@@ -65,8 +66,8 @@ func NewProxy(config Config) (newProxy Proxy) {
 			transmit: transport.GetProtocol(out.Transmit),
 			wsPath:   out.WsPath,
 		}
-		_, exist := newProxy.outbounds[out.Tag]
-		if exist == true {
+
+		if _, exist := newProxy.outbounds[out.Tag]; exist == true {
 			log.Fatalln("duplicate outbound tag")
 		}
 		newProxy.outbounds[out.Tag] = &newOutbound
