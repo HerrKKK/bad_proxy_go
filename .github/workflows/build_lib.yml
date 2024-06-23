@@ -1,0 +1,37 @@
+name: Build lib
+on:
+  push:
+    branches-ignore:
+      - master
+    paths-ignore:
+      - "**.yml"
+      - "**.md"
+      - "**.sh"
+      - "**.json"
+      - ".gitignore"
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build so lib for android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26d
+          add-to-path: true
+      - name: build
+        run: |
+          cd bad_proxy_go
+          chmod +x ./build_lib.sh
+          ./build_lib.sh ${{ steps.setup-ndk.outputs.ndk-path }}
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          path: bad_proxy_go/libproxy.so
+          overwrite: true
+      - name: Attest
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'bad_proxy_go/libproxy.so'
