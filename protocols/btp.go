@@ -167,7 +167,7 @@ type BtpInbound struct {
 }
 
 func (inbound *BtpInbound) Fallback(rawData []byte) {
-	if _, err := parseHttpRequest(rawData); err != nil {
+	if _, err := ParseHttpRequest(rawData); err != nil {
 		return
 	}
 	page := []byte("<html><body><a href=\"https://wwr.icu\">Please login<a>\r\n</body></html>")

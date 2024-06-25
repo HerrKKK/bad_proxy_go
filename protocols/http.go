@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"C"
 	"bytes"
 	"fmt"
 	"net"
@@ -14,23 +15,23 @@ type Request interface {
 
 type HTTPRequest struct {
 	Method  string
-	url     string
+	Url     string
 	Address string
 	Payload []byte
 }
 
-func parseHttpRequest(buffer []byte) (request HTTPRequest, err error) {
+func ParseHttpRequest(buffer []byte) (request HTTPRequest, err error) {
 	if _, err = fmt.Sscanf(
 		string(buffer[:bytes.IndexByte(buffer[:], '\n')]),
 		"%s%s",
 		&request.Method,
-		&request.url,
+		&request.Url,
 	); err != nil {
 		return
 	}
-	hostPortURL, err := url.Parse(request.url)
+	hostPortURL, err := url.Parse(request.Url)
 	if err != nil { // Just believe url is an ip when parsing failed, leave err behind.
-		request.Address = request.url
+		request.Address = request.Url
 	} else if len(hostPortURL.Host) == 0 { // for opaque urls.
 		request.Address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
 	} else { // url parsed successfully.
@@ -59,7 +60,7 @@ func (inbound *HttpInbound) Connect() (targetAddr string, payload []byte, err er
 	if err != nil {
 		return
 	}
-	request, err := parseHttpRequest(payload[:])
+	request, err := ParseHttpRequest(payload[:])
 	if err != nil {
 		return
 	}
