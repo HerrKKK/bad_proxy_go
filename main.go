@@ -22,7 +22,7 @@ const (
 	`
 )
 
-func ReadConfig(path string) (config proxy.Config, err error) {
+func readConfig(path string) (config proxy.Config, err error) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return
@@ -50,7 +50,7 @@ func main() {
 		return
 	}
 
-	config, err := ReadConfig(*configPath)
+	config, err := readConfig(*configPath)
 	if err != nil {
 		fmt.Print("failed to read config\n")
 		return
