@@ -77,16 +77,15 @@ func (request *BTPRequest) validate(secret string) (err error) {
 		return errors.New("digest mismatch, unauthorized connect")
 	}
 
-	err = GetBtpCache().Add(request.digest)
-	if err != nil {
-		return err // possible replay attack
+	if err = GetBtpCache().Add(request.digest); err != nil {
+		return
 	}
 
 	if request.headerLen != btpHeaderLen {
 		return errors.New("wrong btp head len")
 	}
 
-	return nil
+	return
 }
 
 func parseBtpRequest(rawData []byte) (request *BTPRequest, err error) {
@@ -168,13 +167,12 @@ type BtpInbound struct {
 }
 
 func (inbound *BtpInbound) Fallback(rawData []byte) {
-	_, err := parseHttpRequest(rawData)
-	if err != nil {
+	if _, err := parseHttpRequest(rawData); err != nil {
 		return
 	}
 	page := []byte("<html><body><a href=\"https://wwr.icu\">Please login<a>\r\n</body></html>")
 	header := []byte("HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nContent-Length:" + strconv.Itoa(len(page)) + "Connection: close \r\n\r\n")
-	_, err = inbound.Write(append(header, page...))
+	_, _ = inbound.Write(append(header, page...))
 }
 
 func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err error) {
@@ -187,8 +185,7 @@ func (inbound *BtpInbound) Connect() (targetAddr string, payload []byte, err err
 	if err != nil {
 		return
 	}
-	err = request.validate(inbound.Secret)
-	if err != nil { // try to handle http connection
+	if err = request.validate(inbound.Secret); err != nil { // try to handle http connection
 		return
 	}
 	return request.Address, request.Payload, nil
@@ -212,8 +209,7 @@ type BtpOutbound struct {
 }
 
 func (outbound *BtpOutbound) Connect(targetAddr string, payload []byte) (err error) {
-	payload, err = encodeBtpRequest(targetAddr, payload, outbound.Secret)
-	if err != nil {
+	if payload, err = encodeBtpRequest(targetAddr, payload, outbound.Secret); err != nil {
 		return
 	}
 	_, err = outbound.Conn.Write(payload)

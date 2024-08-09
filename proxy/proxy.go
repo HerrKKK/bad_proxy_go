@@ -1,10 +1,12 @@
 package proxy
 
 import (
+	"encoding/json"
 	"go_proxy/router"
 	"go_proxy/transport"
 	"io"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -27,7 +29,7 @@ const (
 	HTTP  = "http"
 )
 
-func NewProxy(config Config) (newProxy Proxy) {
+func newProxy(config Config) (newProxy Proxy) {
 	newProxy.outbounds = make(map[string]*Outbound, 10)
 	newProxy.routers = make([]router.Router, 0)
 	for _, r := range config.Router {
@@ -115,8 +117,14 @@ func (proxy Proxy) proxy(in InboundConnect) {
 		log.Printf("outbound dial to %s failed\n", outbound.address)
 		return
 	}
-	go io.Copy(in, out)
-	_, _ = io.Copy(out, in)
+	go func() {
+		if _, err := io.Copy(in, out); err != nil {
+			log.Printf("write to %s failed\n", outbound.address)
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		log.Printf("read from %s failed\n", outbound.address)
+	}
 	_ = in.Close()
 	_ = out.Close()
 }
@@ -137,4 +145,27 @@ func (proxy Proxy) route(address string) Outbound {
 		return *proxy.outbounds[""]
 	}
 	return *outbound
+}
+
+func readConfig(path string) (config Config, err error) {
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		return
+	}
+	return config, nil
+}
+
+func Startup(configPath string, routerPath string) (err error) {
+	config, err := readConfig(configPath)
+	if err != nil {
+		return
+	}
+
+	config.RouterPath = routerPath
+	newProxy(config).Start()
+	return
 }

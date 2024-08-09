@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"go_proxy/proxy"
@@ -9,7 +8,7 @@ import (
 )
 
 const (
-	versionMsg = "v1.0.4"
+	versionMsg = "v1.0.5"
 	helpMsg    = `
 	Bad proxy go is a primitive tool for breaching censorship
 	Run application:
@@ -21,18 +20,6 @@ const (
 		--router-path       specify binary routing file path, default conf/rules.dat
 	`
 )
-
-func readConfig(path string) (config proxy.Config, err error) {
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		return
-	}
-	return config, nil
-}
 
 func main() {
 	helpFlag := flag.Bool("help", false, "show help info")
@@ -50,14 +37,10 @@ func main() {
 		return
 	}
 
-	config, err := readConfig(*configPath)
+	err := proxy.Startup(*configPath, *routerPath)
 	if err != nil {
-		fmt.Print("failed to read config\n")
-		return
+		fmt.Println("Error starting proxy:", err)
+		os.Exit(0)
 	}
-
-	config.RouterPath = *routerPath
-	proxy.NewProxy(config).Start()
 	<-make(chan os.Signal)
-	return
 }
