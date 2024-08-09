@@ -1,7 +1,7 @@
 package router
 
 import (
-	"go_proxy/structure"
+	"bad_proxy_go/structure"
 	"log"
 	"regexp"
 	"strings"

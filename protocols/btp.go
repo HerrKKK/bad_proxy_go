@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"bad_proxy_go/structure"
 	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
@@ -8,7 +9,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
-	"go_proxy/structure"
 	"log"
 	"math/big"
 	"net"
