@@ -1,10 +1,12 @@
 package proxy
 
 import (
+	"encoding/json"
 	"go_proxy/router"
 	"go_proxy/transport"
 	"io"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -137,4 +139,27 @@ func (proxy Proxy) route(address string) Outbound {
 		return *proxy.outbounds[""]
 	}
 	return *outbound
+}
+
+func readConfig(path string) (config Config, err error) {
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		return
+	}
+	return config, nil
+}
+
+func Startup(configPath string, routerPath string) (err error) {
+	config, err := readConfig(configPath)
+	if err != nil {
+		return
+	}
+
+	config.RouterPath = routerPath
+	NewProxy(config).Start()
+	return
 }
