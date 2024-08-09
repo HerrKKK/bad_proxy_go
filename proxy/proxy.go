@@ -1,9 +1,9 @@
 package proxy
 
 import (
+	"bad_proxy_go/router"
+	"bad_proxy_go/transport"
 	"encoding/json"
-	"go_proxy/router"
-	"go_proxy/transport"
 	"io"
 	"log"
 	"os"

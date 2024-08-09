@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"go_proxy/protocols"
-	"go_proxy/transport"
+	"bad_proxy_go/protocols"
+	"bad_proxy_go/transport"
 	"log"
 	"net"
 )
