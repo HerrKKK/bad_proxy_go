@@ -1,7 +1,6 @@
 package protocols
 
 import (
-	"bad_proxy_go/structure"
 	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
@@ -9,6 +8,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"github.com/wwr-icu/bad-proxy-core/structure"
 	"log"
 	"math/big"
 	"net"
