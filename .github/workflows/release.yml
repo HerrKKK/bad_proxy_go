@@ -17,18 +17,18 @@ jobs:
     permissions: write-all
     defaults:
       run:
-        working-directory: bad_proxy_go
+        working-directory: bad-proxy-core
         shell: bash
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
         with:
-          path: bad_proxy_go
+          path: bad-proxy-core
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           cache: false
-          go-version-file: bad_proxy_go/go.mod
+          go-version-file: bad-proxy-core/go.mod
       - name: Build
         run: |
           chmod +x ./build.sh
@@ -40,7 +40,7 @@ jobs:
       - name: Attest
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: 'bad_proxy_go/dist/**/*.tar.gz, bad_proxy_go/dist/**/*.zip'
+          subject-path: 'bad-proxy-core/dist/**/*.tar.gz, bad-proxy-core/dist/**/*.zip'
   release_dockerhub:
     name: Release on dockerhub
     runs-on: ubuntu-latest
@@ -60,4 +60,4 @@ jobs:
           push: true
           sbom: true
           provenance: mode=max
-          tags: wwricu/bad_proxy_go:${{ github.ref_name }}, wwricu/bad_proxy_go:latest
+          tags: wwricu/bad-proxy-core:${{ github.ref_name }}, wwricu/bad-proxy-core:latest

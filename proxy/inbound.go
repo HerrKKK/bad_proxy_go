@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"bad_proxy_go/protocols"
-	"bad_proxy_go/transport"
+	"github.com/wwricu/bad-proxy-core/protocols"
+	"github.com/wwricu/bad-proxy-core/transport"
 	"log"
 	"net"
 )

@@ -16,17 +16,17 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: bad_proxy_go
+        working-directory: bad-proxy-core
         shell: bash
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
         with:
-          path: bad_proxy_go
+          path: bad-proxy-core
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           cache: false
-          go-version-file: bad_proxy_go/go.mod
+          go-version-file: bad-proxy-core/go.mod
       - name: Build
         run: go build -o bad_proxy

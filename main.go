@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bad_proxy_go/proxy"
 	"flag"
 	"fmt"
+	"github.com/wwricu/bad-proxy-core/proxy"
 	"os"
 )
 

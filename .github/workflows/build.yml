@@ -19,24 +19,24 @@ jobs:
       - name: Checkout codebase
         uses: actions/checkout@v4
         with:
-          path: bad_proxy_go
+          path: bad-proxy-core
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           cache: false
-          go-version-file: bad_proxy_go/go.mod
+          go-version-file: bad-proxy-core/go.mod
       - name: Build
         run: |
-          cd bad_proxy_go
+          cd bad-proxy-core
           chmod +x ./build.sh
           ./build.sh ${{ vars.DIST_NAME }}
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: bad-proxy-go
-          path: bad_proxy_go/dist
+          name: bad-proxy-core
+          path: bad-proxy-core/dist
           overwrite: true
       - name: Attest
         uses: actions/attest-build-provenance@v1
         with:
-          subject-path: 'bad_proxy_go/dist/**/*.tar.gz, bad_proxy_go/dist/**/*.zip'
+          subject-path: 'bad-proxy-core/dist/**/*.tar.gz, bad-proxy-core/dist/**/*.zip'
