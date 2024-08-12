@@ -8,7 +8,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
-	"github.com/wwr-icu/bad-proxy-core/structure"
+	"github.com/wwricu/bad-proxy-core/structure"
 	"log"
 	"math/big"
 	"net"

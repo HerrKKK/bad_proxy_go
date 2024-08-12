@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/wwr-icu/bad-proxy-core/structure"
+	"github.com/wwricu/bad-proxy-core/structure"
 	"log"
 	"regexp"
 	"strings"

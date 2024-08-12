@@ -1,4 +1,4 @@
-module github.com/wwr-icu/bad-proxy-core
+module github.com/wwricu/bad-proxy-core
 
 go 1.22
 

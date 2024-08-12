@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/wwr-icu/bad-proxy-core/proxy"
+	"github.com/wwricu/bad-proxy-core/proxy"
 	"os"
 )
 

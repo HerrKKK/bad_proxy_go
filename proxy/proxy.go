@@ -2,8 +2,8 @@ package proxy
 
 import (
 	"encoding/json"
-	"github.com/wwr-icu/bad-proxy-core/router"
-	"github.com/wwr-icu/bad-proxy-core/transport"
+	"github.com/wwricu/bad-proxy-core/router"
+	"github.com/wwricu/bad-proxy-core/transport"
 	"io"
 	"log"
 	"os"
